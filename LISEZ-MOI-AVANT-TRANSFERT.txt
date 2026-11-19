@@ -1,0 +1,9 @@
+SAMEL-GUINEE — TRANSFERT VERS GITHUB
+
+1. Décompressez cette archive sur votre téléphone.
+2. Ouvrez le dossier SAMEL-GUINEE-SITE.
+3. Dans GitHub > dépôt Site Samel-guinée > … > Téléverser un fichier, sélectionnez les fichiers ET le dossier supabase contenus ici (pas cette archive ZIP).
+4. Si le sélecteur Android ne permet pas de sélectionner le dossier supabase, dites-le à ChatGPT avant de valider.
+5. Ne publiez pas de clés secrètes, mots de passe ou clés service_role.
+
+Après le transfert, il faudra encore configurer les variables Supabase et tester les inscriptions avant d'ouvrir le site au public.
