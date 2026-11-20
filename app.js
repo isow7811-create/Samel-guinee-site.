@@ -196,8 +196,6 @@ if ($("member-form")) {
 
     const fd = new FormData(form);
 
-    // Les numéros 1 à 21 sont réservés à l'intégration manuelle.
-    // Le serveur attribue les nouveaux numéros à partir de 22.
     fd.delete("numero_existant");
     fd.append("selfie", selfieBlob, "selfie.jpg");
 
@@ -461,6 +459,23 @@ function ensureMemberManagementUI() {
 
       <input type="hidden" name="id">
 
+      <label>
+        Numéro de membre (anciens membres : 1 à 21)
+        <input
+          name="member_number"
+          type="number"
+          min="1"
+          max="21"
+          step="1"
+          placeholder="Laisser vide pour attribution automatique à partir de 22"
+        >
+      </label>
+
+      <small>
+        Pour intégrer un ancien membre, saisissez son numéro entre 1 et 21.
+        Pour un nouveau membre, laissez ce champ vide.
+      </small>
+
       <label>Nom *
         <input name="nom" required maxlength="100">
       </label>
@@ -529,6 +544,7 @@ function ensureMemberManagementUI() {
   $("cancel-manual-member").addEventListener("click", () => {
     $("manual-member-form").hidden = true;
     $("manual-member-form").reset();
+    $("manual-member-form").elements.member_number.disabled = false;
     status("manual-member-status", "");
   });
 
@@ -558,6 +574,10 @@ function openManualMemberForm(member) {
   ].forEach(key => {
     form.elements[key].value = member?.[key] ?? "";
   });
+
+  // Afficher le numéro existant sans permettre sa modification.
+  form.elements.member_number.value = member?.member_number ?? "";
+  form.elements.member_number.disabled = !!member;
 
   $("manual-form-title").textContent = member
     ? `Modifier le membre N° ${member.member_number}`
@@ -643,6 +663,7 @@ async function saveManualMember(event) {
 
     form.reset();
     form.hidden = true;
+    form.elements.member_number.disabled = false;
 
     await loadMembers();
 
