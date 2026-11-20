@@ -1,6 +1,7 @@
 
 /* SAMEL-GUINEE — app.js complet
-   Connexion Supabase, inscriptions, administration et gestion des membres. */
+   Connexion Supabase, inscriptions, administration,
+   gestion des membres et exports PDF. */
 
 const SUPABASE_URL = "https://muzxcqrcalvmjzhjyeat.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_F8OJKc0ZCtnXxEKRnkFMfA_5Ep8naL0";
@@ -60,7 +61,6 @@ function stopCamera() {
 
 function resetSelfie() {
   selfieBlob = null;
-
   const preview = $("selfie-preview");
 
   if (preview) {
@@ -140,7 +140,6 @@ if ($("take-selfie")) {
       }
 
       selfieBlob = blob;
-
       $("selfie-preview").src = URL.createObjectURL(blob);
       $("selfie-preview").hidden = false;
 
@@ -195,7 +194,6 @@ if ($("member-form")) {
     }
 
     const fd = new FormData(form);
-
     fd.delete("numero_existant");
     fd.append("selfie", selfieBlob, "selfie.jpg");
 
@@ -211,7 +209,6 @@ if ($("member-form")) {
 
       if (error) {
         console.error("Erreur inscription :", error);
-
         let message = error.message || "Erreur lors de l'envoi.";
 
         try {
@@ -255,10 +252,7 @@ async function getAdminProfile(userId) {
     .maybeSingle();
 
   if (!first.error && first.data?.role) {
-    return {
-      role: first.data.role,
-      source: "profiles"
-    };
+    return { role: first.data.role, source: "profiles" };
   }
 
   console.warn("Lecture profiles :", first.error || "Profil absent");
@@ -270,10 +264,7 @@ async function getAdminProfile(userId) {
     .maybeSingle();
 
   if (!second.error && second.data?.role) {
-    return {
-      role: second.data.role,
-      source: "admin_profiles"
-    };
+    return { role: second.data.role, source: "admin_profiles" };
   }
 
   console.error("Lecture admin_profiles :", second.error || "Profil absent");
@@ -310,12 +301,10 @@ if ($("login-form")) {
       });
 
       if (error) throw error;
-
       await loadAdmin();
 
     } catch (err) {
       console.error("Erreur connexion :", err);
-
       status(
         "admin-status",
         `Connexion impossible : ${err.message || "Vérifiez l'e-mail et le mot de passe."}`
@@ -334,7 +323,6 @@ async function loadAdmin() {
 
   try {
     const { data: userData, error: userError } = await client.auth.getUser();
-
     if (userError) throw userError;
 
     const user = userData?.user;
@@ -350,15 +338,9 @@ async function loadAdmin() {
 
     try {
       profile = await getAdminProfile(user.id);
-
     } catch (err) {
       console.error("Profil administrateur :", err);
-
-      status(
-        "admin-status",
-        `Compte connecté, mais profil inaccessible : ${err.message}`
-      );
-
+      status("admin-status", `Compte connecté, mais profil inaccessible : ${err.message}`);
       await client.auth.signOut();
       return;
     }
@@ -390,9 +372,7 @@ async function loadAdmin() {
     ensureMemberManagementUI();
 
     status("admin-status", "Connexion réussie. Chargement des membres…");
-
     await loadMembers();
-
     status("admin-status", "");
 
   } catch (err) {
@@ -405,7 +385,6 @@ async function loadAdmin() {
 
 async function loadMembers() {
   const box = $("members");
-
   if (!box || !client) return;
 
   box.textContent = "Chargement des membres…";
@@ -431,44 +410,33 @@ async function loadMembers() {
 
 function ensureMemberManagementUI() {
   const panel = $("admin-panel");
-
   if (!panel || $("member-management")) return;
 
   const section = document.createElement("section");
-
   section.id = "member-management";
-
   section.style.cssText =
     "margin:18px 0;padding:16px;border:1px solid #dce8df;border-radius:14px;background:#fff";
 
   section.innerHTML = `
     <h3 style="color:#087b46">Gestion des membres</h3>
 
-    <button
-      type="button"
-      id="show-add-member"
-      style="background:#087b46;color:white;padding:12px 18px;border:0;border-radius:8px"
-    >+ Ajouter un membre</button>
+    <button type="button" id="show-add-member"
+      style="background:#087b46;color:white;padding:12px 18px;border:0;border-radius:8px">
+      + Ajouter un membre
+    </button>
 
-    <form
-      id="manual-member-form"
-      hidden
-      style="margin-top:16px;display:grid;gap:10px"
-    >
+    <button type="button" id="export-members-pdf"
+      style="background:#174b32;color:white;padding:12px 18px;border:0;border-radius:8px;margin:8px 0">
+      Télécharger la liste complète en PDF
+    </button>
+
+    <form id="manual-member-form" hidden style="margin-top:16px;display:grid;gap:10px">
       <h4 id="manual-form-title">Ajouter un membre (sans selfie)</h4>
-
       <input type="hidden" name="id">
 
-      <label>
-        Numéro de membre (anciens membres : 1 à 21)
-        <input
-          name="member_number"
-          type="number"
-          min="1"
-          max="21"
-          step="1"
-          placeholder="Laisser vide pour attribution automatique à partir de 22"
-        >
+      <label>Numéro de membre (anciens membres : 1 à 21)
+        <input name="member_number" type="number" min="1" max="21" step="1"
+          placeholder="Laisser vide pour attribution automatique à partir de 22">
       </label>
 
       <small>
@@ -500,25 +468,11 @@ function ensureMemberManagementUI() {
         <input name="numero_pdv" required>
       </label>
 
-      <label>Région
-        <input name="region">
-      </label>
-
-      <label>Ville
-        <input name="ville">
-      </label>
-
-      <label>Commune
-        <input name="commune">
-      </label>
-
-      <label>Emplacement
-        <input name="emplacement">
-      </label>
-
-      <label>Poste occupé
-        <input name="poste_occupe">
-      </label>
+      <label>Région <input name="region"></label>
+      <label>Ville <input name="ville"></label>
+      <label>Commune <input name="commune"></label>
+      <label>Emplacement <input name="emplacement"></label>
+      <label>Poste occupé <input name="poste_occupe"></label>
 
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <button type="submit" id="save-manual-member">Enregistrer</button>
@@ -537,6 +491,8 @@ function ensureMemberManagementUI() {
     panel.insertBefore(section, panel.firstChild);
   }
 
+  $("export-members-pdf").addEventListener("click", exportAllMembersPDF);
+
   $("show-add-member").addEventListener("click", () => {
     openManualMemberForm(null);
   });
@@ -553,29 +509,18 @@ function ensureMemberManagementUI() {
 
 function openManualMemberForm(member) {
   const form = $("manual-member-form");
-
   if (!form) return;
 
   form.reset();
-
   form.elements.id.value = member?.id || "";
 
   [
-    "nom",
-    "prenom",
-    "sexe",
-    "telephone",
-    "numero_pdv",
-    "region",
-    "ville",
-    "commune",
-    "emplacement",
-    "poste_occupe"
+    "nom", "prenom", "sexe", "telephone", "numero_pdv",
+    "region", "ville", "commune", "emplacement", "poste_occupe"
   ].forEach(key => {
     form.elements[key].value = member?.[key] ?? "";
   });
 
-  // Afficher le numéro existant sans permettre sa modification.
   form.elements.member_number.value = member?.member_number ?? "";
   form.elements.member_number.disabled = !!member;
 
@@ -588,13 +533,9 @@ function openManualMemberForm(member) {
     : "Enregistrer le membre";
 
   form.hidden = false;
-
   status("manual-member-status", "");
 
-  form.scrollIntoView({
-    behavior: "smooth",
-    block: "center"
-  });
+  form.scrollIntoView({ behavior: "smooth", block: "center" });
 }
 
 /* APPEL DE LA FONCTION DE GESTION */
@@ -606,10 +547,7 @@ async function invokeMemberManagement(body) {
   if (sessionError) throw sessionError;
 
   const session = sessionData?.session;
-
-  if (!session) {
-    throw new Error("Session administrateur expirée. Reconnectez-vous.");
-  }
+  if (!session) throw new Error("Session administrateur expirée. Reconnectez-vous.");
 
   const { data, error } = await client.functions.invoke(
     "admin-manage-member",
@@ -633,7 +571,6 @@ async function invokeMemberManagement(body) {
   }
 
   if (data?.error) throw new Error(data.error);
-
   return data;
 }
 
@@ -644,14 +581,12 @@ async function saveManualMember(event) {
 
   const form = event.currentTarget;
   const button = $("save-manual-member");
-
   button.disabled = true;
 
   status("manual-member-status", "Enregistrement en cours…");
 
   try {
     const values = Object.fromEntries(new FormData(form).entries());
-
     const action = values.id ? "update" : "add";
 
     const result = await invokeMemberManagement({
@@ -691,18 +626,11 @@ async function deleteMember(id) {
 
   if (!confirm(
     `Confirmer la suppression définitive de ${label} ? Cette action ne peut pas être annulée.`
-  )) {
-    return;
-  }
+  )) return;
 
   try {
-    const result = await invokeMemberManagement({
-      action: "delete",
-      id
-    });
-
+    const result = await invokeMemberManagement({ action: "delete", id });
     alert(result?.message || "Membre supprimé.");
-
     await loadMembers();
 
   } catch (err) {
@@ -715,25 +643,14 @@ async function deleteMember(id) {
 
 function renderMembers() {
   const box = $("members");
-
   if (!box) return;
 
-  const q = ($("search")?.value || "")
-    .trim()
-    .toLocaleLowerCase("fr");
+  const q = ($("search")?.value || "").trim().toLocaleLowerCase("fr");
 
   const rows = currentMembers.filter(m => [
-    m.member_number,
-    m.nom,
-    m.prenom,
-    m.sexe,
-    m.telephone,
-    m.numero_pdv,
-    m.region,
-    m.ville,
-    m.commune,
-    m.emplacement,
-    m.poste_occupe
+    m.member_number, m.nom, m.prenom, m.sexe, m.telephone,
+    m.numero_pdv, m.region, m.ville, m.commune,
+    m.emplacement, m.poste_occupe
   ].join(" ").toLocaleLowerCase("fr").includes(q));
 
   if (!rows.length) {
@@ -747,25 +664,17 @@ function renderMembers() {
 
   box.innerHTML = `
     <p><strong>Nombre de membres affichés : ${rows.length}</strong></p>
-
     <div style="overflow-x:auto">
       <table>
         <thead>
           <tr>
-            <th>N° membre</th>
-            <th>Nom et prénom</th>
-            <th>Sexe</th>
-            <th>Téléphone</th>
-            <th>N° PDV</th>
-            <th>Région / Ville / Commune</th>
-            <th>Emplacement</th>
-            <th>Poste</th>
-            <th>Date d'inscription</th>
-            <th>Selfie</th>
+            <th>N° membre</th><th>Nom et prénom</th><th>Sexe</th>
+            <th>Téléphone</th><th>N° PDV</th>
+            <th>Région / Ville / Commune</th><th>Emplacement</th>
+            <th>Poste</th><th>Date d'inscription</th><th>Selfie</th>
             ${canManage ? "<th>Actions</th>" : ""}
           </tr>
         </thead>
-
         <tbody>
           ${rows.map(m => `
             <tr>
@@ -774,13 +683,10 @@ function renderMembers() {
               <td>${escapeHTML(m.sexe)}</td>
               <td>${escapeHTML(m.telephone)}</td>
               <td>${escapeHTML(m.numero_pdv)}</td>
-              <td>${escapeHTML(
-                [m.region, m.ville, m.commune].filter(Boolean).join(" / ")
-              )}</td>
+              <td>${escapeHTML([m.region, m.ville, m.commune].filter(Boolean).join(" / "))}</td>
               <td>${escapeHTML(m.emplacement)}</td>
               <td>${escapeHTML(m.poste_occupe)}</td>
               <td>${escapeHTML(formatDate(m.created_at))}</td>
-
               <td>
                 ${
                   m.selfie_path
@@ -788,10 +694,10 @@ function renderMembers() {
                     : "Non disponible"
                 }
               </td>
-
               ${
                 canManage
                   ? `<td style="white-space:nowrap">
+                       <button type="button" data-pdf="${escapeHTML(m.id)}">Dossier PDF</button>
                        <button type="button" data-edit="${escapeHTML(m.id)}">Modifier</button>
                        <button type="button" data-delete="${escapeHTML(m.id)}">Supprimer</button>
                      </td>`
@@ -805,34 +711,235 @@ function renderMembers() {
   `;
 
   box.querySelectorAll("[data-photo]").forEach(btn => {
-    btn.addEventListener("click", () => {
-      openMemberPhoto(btn.dataset.photo);
-    });
+    btn.addEventListener("click", () => openMemberPhoto(btn.dataset.photo));
+  });
+
+  box.querySelectorAll("[data-pdf]").forEach(btn => {
+    btn.addEventListener("click", () => exportIndividualMemberPDF(btn.dataset.pdf));
   });
 
   box.querySelectorAll("[data-edit]").forEach(btn => {
     btn.addEventListener("click", () => {
-      const member = currentMembers.find(
-        m => String(m.id) === btn.dataset.edit
-      );
-
+      const member = currentMembers.find(m => String(m.id) === btn.dataset.edit);
       openManualMemberForm(member);
     });
   });
 
   box.querySelectorAll("[data-delete]").forEach(btn => {
-    btn.addEventListener("click", () => {
-      deleteMember(btn.dataset.delete);
-    });
+    btn.addEventListener("click", () => deleteMember(btn.dataset.delete));
   });
+}
+
+/* EXPORT PDF DES MEMBRES — ADMINISTRATEURS UNIQUEMENT */
+
+function pdfField(label, value) {
+  return `<tr><th>${escapeHTML(label)}</th><td>${escapeHTML(value || "Non renseigné")}</td></tr>`;
+}
+
+function pdfHeader() {
+  return `
+    <header>
+      <img src="${location.origin}/logo.jpg" alt="Logo SAMEL-Guinée"
+        onerror="this.style.display='none'">
+      <h1>SAMEL-GUINÉE</h1>
+      <p>Syndicat des Acteurs de la Monnaie Électronique de Guinée</p>
+      <p><strong>Travail • Compétence • Solidarité</strong></p>
+    </header>
+  `;
+}
+
+function printDocument(title, body, orientation = "portrait") {
+  const win = window.open("", "_blank");
+
+  if (!win) {
+    alert("Autorisez les fenêtres pop-up dans votre navigateur pour créer le PDF.");
+    return;
+  }
+
+  win.document.open();
+  win.document.write(`<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${escapeHTML(title)}</title>
+<style>
+@page{size:A4 ${orientation};margin:12mm}
+*{box-sizing:border-box}
+body{font-family:Arial,sans-serif;color:#222;font-size:10px}
+header{text-align:center;border-bottom:3px solid #087b46;padding-bottom:10px;margin-bottom:14px}
+header img{max-height:55px;max-width:140px;object-fit:contain}
+h1{color:#087b46;font-size:19px;margin:7px 0 3px}
+h2{font-size:14px;margin:12px 0 8px;color:#087b46}
+p{margin:4px 0}
+table{width:100%;border-collapse:collapse;margin-top:8px}
+th,td{border:1px solid #aaa;padding:5px;text-align:left;vertical-align:top}
+th{background:#eaf4ed}
+.member-photo{display:block;max-width:135px;max-height:135px;object-fit:cover;margin:10px auto;border:1px solid #ccc}
+.count{font-weight:bold;margin:9px 0}
+.footer{margin-top:18px;border-top:1px solid #aaa;padding-top:7px;text-align:center;font-size:8px}
+tr{page-break-inside:avoid}
+@media screen{body{max-width:1100px;margin:18px auto;padding:18px}}
+</style>
+</head>
+<body>
+${body}
+<div class="footer">SAMEL-Guinée — Document généré le ${new Date().toLocaleString("fr-FR")}</div>
+<script>
+window.addEventListener("load",()=>setTimeout(()=>window.print(),1000));
+<\/script>
+</body>
+</html>`);
+  win.document.close();
+}
+
+async function exportIndividualMemberPDF(id) {
+  if (!["admin", "super_admin"].includes(currentAdminRole)) {
+    alert("Accès réservé aux administrateurs.");
+    return;
+  }
+
+  const member = currentMembers.find(m => String(m.id) === String(id));
+  if (!member) {
+    alert("Membre introuvable.");
+    return;
+  }
+
+  // Fenêtre ouverte immédiatement pour éviter le blocage des pop-up sur mobile.
+  const win = window.open("", "_blank");
+
+  if (!win) {
+    alert("Autorisez les fenêtres pop-up dans votre navigateur pour créer le PDF.");
+    return;
+  }
+
+  win.document.write("<p style='font-family:Arial;padding:20px'>Préparation du dossier membre…</p>");
+
+  try {
+    let photoHtml = "";
+
+    if (member.selfie_path) {
+      const { data, error } = await client.storage
+        .from("member-selfies")
+        .createSignedUrl(member.selfie_path, 300);
+
+      if (!error && data?.signedUrl) {
+        photoHtml = `<h2>Photo du membre</h2>
+          <img class="member-photo" src="${escapeHTML(data.signedUrl)}" alt="Selfie du membre">`;
+      }
+    }
+
+    const body = `
+      ${pdfHeader()}
+      <h2>Dossier individuel du membre</h2>
+      <p class="count">Numéro de membre : ${escapeHTML(member.member_number)}</p>
+      ${photoHtml}
+      <table>
+        ${pdfField("Numéro de membre", member.member_number)}
+        ${pdfField("Nom", member.nom)}
+        ${pdfField("Prénom", member.prenom)}
+        ${pdfField("Sexe", member.sexe)}
+        ${pdfField("Téléphone", member.telephone)}
+        ${pdfField("Numéro PDV", member.numero_pdv)}
+        ${pdfField("Région", member.region)}
+        ${pdfField("Ville", member.ville)}
+        ${pdfField("Commune", member.commune)}
+        ${pdfField("Emplacement", member.emplacement)}
+        ${pdfField("Poste occupé", member.poste_occupe)}
+        ${pdfField("Date d'inscription", formatDate(member.created_at))}
+      </table>
+    `;
+
+    const doc = win.document;
+    doc.open();
+    doc.write(`<!doctype html><html lang="fr"><head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      <title>Dossier membre ${escapeHTML(member.member_number)}</title>
+      <style>
+      @page{size:A4 portrait;margin:14mm}
+      *{box-sizing:border-box}
+      body{font-family:Arial,sans-serif;color:#222;font-size:12px}
+      header{text-align:center;border-bottom:3px solid #087b46;padding-bottom:12px;margin-bottom:18px}
+      header img{max-height:60px;max-width:145px}
+      h1{color:#087b46;font-size:20px;margin:8px 0 4px}
+      h2{font-size:15px;color:#087b46;margin:18px 0 8px}
+      table{width:100%;border-collapse:collapse}
+      th,td{border:1px solid #bbb;padding:8px;text-align:left}
+      th{width:35%;background:#eaf4ed}
+      .member-photo{display:block;max-width:150px;max-height:150px;object-fit:cover;margin:12px auto}
+      .footer{margin-top:22px;border-top:1px solid #aaa;padding-top:8px;text-align:center;font-size:9px}
+      </style></head><body>
+      ${body}
+      <div class="footer">Document généré le ${new Date().toLocaleString("fr-FR")}</div>
+      <script>window.addEventListener("load",()=>setTimeout(()=>window.print(),1200));<\/script>
+      </body></html>`);
+    doc.close();
+
+  } catch (err) {
+    console.error("Export dossier membre :", err);
+    win.close();
+    alert(`Impossible de préparer le dossier PDF : ${err.message}`);
+  }
+}
+
+function exportAllMembersPDF() {
+  if (!["admin", "super_admin"].includes(currentAdminRole)) {
+    alert("Accès réservé aux administrateurs.");
+    return;
+  }
+
+  if (!currentMembers.length) {
+    alert("Aucun membre à exporter.");
+    return;
+  }
+
+  const sorted = [...currentMembers].sort(
+    (a, b) => Number(a.member_number) - Number(b.member_number)
+  );
+
+  const tableRows = sorted.map(m => `
+    <tr>
+      <td>${escapeHTML(m.member_number)}</td>
+      <td>${escapeHTML(`${m.nom || ""} ${m.prenom || ""}`.trim())}</td>
+      <td>${escapeHTML(m.sexe)}</td>
+      <td>${escapeHTML(m.telephone)}</td>
+      <td>${escapeHTML(m.numero_pdv)}</td>
+      <td>${escapeHTML([m.region, m.ville, m.commune].filter(Boolean).join(" / "))}</td>
+      <td>${escapeHTML(m.emplacement)}</td>
+      <td>${escapeHTML(m.poste_occupe)}</td>
+      <td>${escapeHTML(formatDate(m.created_at))}</td>
+    </tr>
+  `).join("");
+
+  const body = `
+    ${pdfHeader()}
+    <h2>Liste générale des membres</h2>
+    <p class="count">Effectif total : ${sorted.length} membre(s)</p>
+    <table>
+      <thead>
+        <tr>
+          <th>N°</th><th>Nom et prénom</th><th>Sexe</th>
+          <th>Téléphone</th><th>N° PDV</th>
+          <th>Région / Ville / Commune</th><th>Emplacement</th>
+          <th>Poste</th><th>Date d'inscription</th>
+        </tr>
+      </thead>
+      <tbody>${tableRows}</tbody>
+    </table>
+  `;
+
+  printDocument(
+    "Liste générale des membres — SAMEL-Guinée",
+    body,
+    "landscape"
+  );
 }
 
 /* OUVERTURE SECURISEE DU SELFIE */
 
 async function openMemberPhoto(id) {
-  const member = currentMembers.find(
-    m => String(m.id) === String(id)
-  );
+  const member = currentMembers.find(m => String(m.id) === String(id));
 
   if (!member?.selfie_path) {
     alert("Aucun selfie disponible pour ce membre.");
@@ -883,10 +990,7 @@ if ($("create-admin")) {
     }
 
     const form = event.currentTarget;
-
-    const button = form.querySelector(
-      'button[type="submit"],button:not([type])'
-    );
+    const button = form.querySelector('button[type="submit"],button:not([type])');
 
     try {
       const { data: sessionData, error: sessionError } =
@@ -895,21 +999,13 @@ if ($("create-admin")) {
       if (sessionError) throw sessionError;
 
       const session = sessionData?.session;
-
-      if (!session) {
-        throw new Error("Session administrateur introuvable.");
-      }
+      if (!session) throw new Error("Session administrateur introuvable.");
 
       if (button) button.disabled = true;
 
-      status(
-        "admin-status",
-        "Création du compte administrateur en cours…"
-      );
+      status("admin-status", "Création du compte administrateur en cours…");
 
-      const formData = Object.fromEntries(
-        new FormData(form).entries()
-      );
+      const formData = Object.fromEntries(new FormData(form).entries());
 
       const { error } = await client.functions.invoke(
         "admin-create-user",
@@ -923,20 +1019,12 @@ if ($("create-admin")) {
 
       if (error) throw error;
 
-      status(
-        "admin-status",
-        "Compte administrateur créé avec succès."
-      );
-
+      status("admin-status", "Compte administrateur créé avec succès.");
       form.reset();
 
     } catch (err) {
       console.error("Création administrateur :", err);
-
-      status(
-        "admin-status",
-        `Création impossible : ${err.message}`
-      );
+      status("admin-status", `Création impossible : ${err.message}`);
 
     } finally {
       if (button) button.disabled = false;
@@ -950,7 +1038,6 @@ if ($("logout")) {
   $("logout").addEventListener("click", async () => {
     try {
       const { error } = await client.auth.signOut();
-
       if (error) throw error;
 
       currentAdminRole = null;
@@ -981,7 +1068,6 @@ async function restoreAdminSession() {
 
   try {
     const { data, error } = await client.auth.getSession();
-
     if (error) throw error;
 
     if (data?.session) {
