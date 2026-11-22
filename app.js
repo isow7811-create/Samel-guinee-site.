@@ -7,6 +7,8 @@ const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_F8OJKc0ZCtnXxEKRnkFMfA_5Ep8naL0
 
 const configured = !!window.supabase &&
   SUPABASE_URL.startsWith("https://") &&
+  typeof SUPABASE_PUBLISHABLE_KEY === "string" &&
+  SUPABASE_PUBLISHABLE_KEY.trim().length > 0 &&
   !SUPABASE_PUBLISHABLE_KEY.includes("COLLER_ICI");
 
 const client = configured ? window.supabase.createClient(
@@ -30,7 +32,10 @@ let currentAdminRole = null;
 
 function status(id, message) {
   const el = $(id);
-  if (el) el.textContent = message || "";
+  if (el) {
+    el.textContent = message || "";
+    if (id === "form-status") el.style.whiteSpace = "pre-line";
+  }
 }
 
 function escapeHTML(value) {
@@ -289,7 +294,7 @@ if ($("member-form")) {
 
       status(
         "form-status",
-        `Inscription envoyée avec succès ! Votre numéro de membre est : ${data.member_number}.`
+        `Félicitations ! Votre inscription au sein du SAMEL-Guinée a été effectuée avec succès.\n\nVotre demande d’adhésion a bien été enregistrée.\n\nVotre numéro de membre est : ${data.member_number}.\n\nNous vous remercions pour votre confiance et vous souhaitons la bienvenue au sein de notre organisation.\n\nSAMEL-GUINÉE\nTravail • Compétence • Solidarité\n\nON EST LÀ, POUR NOS DROITS ON SE BAT !`
       );
 
       form.reset();
@@ -523,25 +528,39 @@ async function loadMembers() {
 
   box.textContent = "Chargement des membres…";
 
-  const { data, error } = await client
-    .from("members")
-    .select(
-      "id,member_number,nom,prenom,sexe,telephone,numero_pdv,region,ville,commune,emplacement,poste_occupe,created_at,selfie_path"
-    )
-    .order("member_number", { ascending: true });
+  try {
+    // Récupération paginée : une seule requête Supabase peut être limitée
+    // par la configuration du projet (souvent à 1 000 lignes).
+    const pageSize = 500;
+    let from = 0;
+    const allMembers = [];
 
-  if (error) {
-    console.error("Chargement membres :", error);
+    while (true) {
+      const { data, error } = await client
+        .from("members")
+        .select(
+          "id,member_number,nom,prenom,sexe,telephone,numero_pdv,region_ville_commune,emplacement,poste_occupe,created_at,selfie_path"
+        )
+        .order("member_number", { ascending: true })
+        .range(from, from + pageSize - 1);
 
+      if (error) throw error;
+
+      const page = data || [];
+      allMembers.push(...page);
+
+      if (page.length < pageSize) break;
+      from += pageSize;
+    }
+
+    currentMembers = allMembers;
+    renderMembers();
+
+  } catch (err) {
+    console.error("Chargement membres :", err);
     box.textContent =
-      `Impossible de charger les membres : ${error.message}`;
-
-    return;
+      `Impossible de charger les membres : ${err.message || "Erreur inconnue."}`;
   }
-
-  currentMembers = data || [];
-
-  renderMembers();
 }
 
 /* =====================================================
@@ -622,6 +641,11 @@ function ensureMemberManagementUI() {
       <label>
         Numéro PDV *
         <input name="numero_pdv" required>
+      </label>
+
+      <label>
+        Ancien numéro de carte (réservé aux numéros 1 à 21)
+        <input name="numero_existant" type="number" min="1" max="21" step="1">
       </label>
 
       <label>
@@ -714,14 +738,17 @@ function openManualMemberForm(member) {
     "sexe",
     "telephone",
     "numero_pdv",
-    "region",
-    "ville",
-    "commune",
     "emplacement",
-    "poste_occupe"
+    "poste_occupe",
+    "numero_existant"
   ].forEach(k => {
     form.elements[k].value = member?.[k] ?? "";
   });
+
+  const locationParts = String(member?.region_ville_commune || "").split("/").map(part => part.trim());
+  form.elements.region.value = locationParts[0] || "";
+  form.elements.ville.value = locationParts[1] || "";
+  form.elements.commune.value = locationParts.slice(2).join(" / ") || "";
 
   $("manual-form-title").textContent = member
     ? `Modifier le membre N° ${member.member_number}`
@@ -815,6 +842,14 @@ async function saveManualMember(event) {
       new FormData(form).entries()
     );
 
+    values.region_ville_commune = [values.region, values.ville, values.commune]
+      .map(value => String(value || "").trim())
+      .filter(Boolean)
+      .join(" / ");
+    delete values.region;
+    delete values.ville;
+    delete values.commune;
+
     const action = values.id ? "update" : "add";
 
     const result = await invokeMemberManagement({
@@ -903,9 +938,7 @@ function renderMembers() {
     m.sexe,
     m.telephone,
     m.numero_pdv,
-    m.region,
-    m.ville,
-    m.commune,
+    m.region_ville_commune,
     m.emplacement,
     m.poste_occupe
   ].join(" ").toLocaleLowerCase("fr").includes(q));
@@ -970,9 +1003,7 @@ function renderMembers() {
 
               <td>
                 ${escapeHTML(
-                  [m.region, m.ville, m.commune]
-                    .filter(Boolean)
-                    .join(" / ")
+                  m.region_ville_commune
                 )}
               </td>
 
@@ -1489,9 +1520,7 @@ async function exportOneMemberPDF(id) {
     ["Sexe", member.sexe],
     ["Téléphone", member.telephone],
     ["Numéro PDV", member.numero_pdv],
-    ["Région", member.region],
-    ["Ville", member.ville],
-    ["Commune", member.commune],
+    ["Région / Ville / Commune", member.region_ville_commune],
     ["Emplacement", member.emplacement],
     ["Poste occupé", member.poste_occupe],
     ["Date d'inscription", formatDate(member.created_at)]
@@ -1572,11 +1601,7 @@ function exportAllMembersPDF() {
 
       <td>${pdfEscape(m.numero_pdv)}</td>
 
-      <td>${pdfEscape(m.region)}</td>
-
-      <td>${pdfEscape(m.ville)}</td>
-
-      <td>${pdfEscape(m.commune)}</td>
+      <td>${pdfEscape(m.region_ville_commune)}</td>
 
       <td>${pdfEscape(m.emplacement)}</td>
 
@@ -1609,9 +1634,7 @@ function exportAllMembersPDF() {
           <th>Sexe</th>
           <th>Téléphone</th>
           <th>N° PDV</th>
-          <th>Région</th>
-          <th>Ville</th>
-          <th>Commune</th>
+          <th>Région / Ville / Commune</th>
           <th>Emplacement</th>
           <th>Date d'inscription</th>
         </tr>
