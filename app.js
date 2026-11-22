@@ -900,4 +900,615 @@ function renderMembers() {
 
               <td>
                 ${escapeHTML(
-                  [m.region, 
+                  [m.region,
+
+m.region, m.ville, m.commune
+                ].filter(Boolean).join(" / ")
+                )}
+              </td>
+
+              <td>${escapeHTML(m.emplacement)}</td>
+              <td>${escapeHTML(m.poste_occupe)}</td>
+              <td>${escapeHTML(formatDate(m.created_at))}</td>
+
+              <td>
+                ${m.selfie_path
+                  ? `<button type="button" data-photo="${escapeHTML(m.id)}">Voir le selfie</button>`
+                  : "Non disponible"}
+              </td>
+
+              ${canManage ? `
+                <td style="white-space:nowrap">
+                  <button type="button" data-pdf="${escapeHTML(m.id)}">PDF</button>
+                  <button type="button" data-edit="${escapeHTML(m.id)}">Modifier</button>
+                  <button type="button" data-delete="${escapeHTML(m.id)}">Supprimer</button>
+                </td>
+              ` : ""}
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+    </div>
+  `;
+
+  box.querySelectorAll("[data-photo]").forEach(btn => {
+    btn.addEventListener("click", () => openMemberPhoto(btn.dataset.photo));
+  });
+
+  box.querySelectorAll("[data-pdf]").forEach(btn => {
+    btn.addEventListener("click", () => exportOneMemberPDF(btn.dataset.pdf));
+  });
+
+  box.querySelectorAll("[data-edit]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const member = currentMembers.find(
+        m => String(m.id) === btn.dataset.edit
+      );
+      openManualMemberForm(member);
+    });
+  });
+
+  box.querySelectorAll("[data-delete]").forEach(btn => {
+    btn.addEventListener("click", () => deleteMember(btn.dataset.delete));
+  });
+}
+
+/* DOCUMENTS PDF SAMEL-GUINEE */
+
+function pdfEscape(value) {
+  return escapeHTML(
+    value === null || value === undefined || value === ""
+      ? "—"
+      : value
+  );
+}
+
+/* Logo intégré */
+const SAMEL_PDF_LOGO =
+  "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAoHBwgHBgoICAgLCgoLDhgQDg0NDh0VFhEYIx8lJCIfIiEmKzcvJik0KSEiMEExNDk7Pj4+JS5ESUM8SDc9Pjv/2wBDAQoLCw4NDhwQEBw7KCIoOzs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozv/wAARCAB4AHgDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqqusra6vsbKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/9oACAEBAAA/APu0ooor+ZP3E//Z";
+
+function openPrintableDocument(title, body, landscape = false, existingWindow = null) {
+  const win = existingWindow || window.open("about:blank", "_blank");
+
+  if (!win || win.closed) {
+    alert("Le navigateur a bloqué le document. Autorisez les fenêtres pop-up puis réessayez.");
+    return;
+  }
+
+  win.document.open();
+
+  win.document.write(`
+    <!doctype html>
+    <html lang="fr">
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      <title>${pdfEscape(title)}</title>
+
+      <style>
+        @page {
+          size: A4 ${landscape ? "landscape" : "portrait"};
+          margin: 13mm;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+          font-family: Arial, Helvetica, sans-serif;
+          color: #24352b;
+          margin: 0;
+          font-size: 12px;
+          background: #fff;
+        }
+
+        .letterhead {
+          text-align: center;
+          border-bottom: 4px solid #087b46;
+          padding-bottom: 13px;
+          margin-bottom: 22px;
+        }
+
+        .brand-logo {
+          width: 88px;
+          height: 88px;
+          object-fit: contain;
+          display: block;
+          margin: 0 auto 7px;
+        }
+
+        .brand-name {
+          font-size: 25px;
+          letter-spacing: 1.2px;
+          color: #087b46;
+          margin: 4px 0;
+          font-weight: 800;
+        }
+
+        .brand-sub {
+          font-size: 12px;
+          margin: 5px 0;
+        }
+
+        .brand-motto {
+          font-size: 13px;
+          font-weight: bold;
+          margin-top: 8px;
+        }
+
+        .document-title {
+          font-size: 18px;
+          color: #087b46;
+          text-transform: uppercase;
+          margin-bottom: 12px;
+          padding-bottom: 8px;
+          border-bottom: 1px solid #d5e5da;
+        }
+
+        .meta {
+          font-size: 11px;
+          color: #56665c;
+          margin-bottom: 14px;
+        }
+
+        .member-number {
+          display: inline-block;
+          background: #eaf4ed;
+          border-left: 4px solid #087b46;
+          padding: 8px 12px;
+          font-weight: bold;
+          color: #155b39;
+          border-radius: 3px;
+        }
+
+        table {
+          width: 100%;
+          border-collapse: collapse;
+          font-size: 11px;
+        }
+
+        th, td {
+          border: 1px solid #cbd8cf;
+          padding: 8px;
+          text-align: left;
+          vertical-align: top;
+        }
+
+        th {
+          background: #e8f3ec;
+          color: #124b30;
+          width: 36%;
+        }
+
+        tbody tr:nth-child(even) td {
+          background: #f8fbf9;
+        }
+
+        .profile {
+          display: flex;
+          gap: 18px;
+          align-items: flex-start;
+        }
+
+        .photo {
+          width: 135px;
+          height: 160px;
+          object-fit: cover;
+          border: 3px solid #e0eee4;
+          border-radius: 5px;
+          padding: 2px;
+          background: white;
+        }
+
+        .details {
+          flex: 1;
+          min-width: 0;
+        }
+
+        .details table { font-size: 12px; }
+        .details th { width: 38%; }
+
+        .footer {
+          margin-top: 24px;
+          border-top: 1px solid #d5e0d8;
+          padding-top: 9px;
+          text-align: center;
+          font-size: 10px;
+          color: #526258;
+        }
+
+        .actions {
+          margin-bottom: 15px;
+          text-align: right;
+        }
+
+        .actions button {
+          padding: 10px 16px;
+          background: #087b46;
+          color: white;
+          border: 0;
+          border-radius: 5px;
+          font-weight: bold;
+        }
+
+        .list-table { font-size: 9px; }
+        .list-table th {
+          background: #087b46;
+          color: white;
+          padding: 7px 5px;
+        }
+
+        .list-table td { padding: 6px 5px; }
+
+        @media print {
+          .actions { display: none; }
+        }
+      </style>
+    </head>
+
+    <body>
+      <div class="actions">
+        <button onclick="window.print()">
+          Imprimer / Enregistrer en PDF
+        </button>
+      </div>
+
+      <header class="letterhead">
+        <img class="brand-logo"
+          src="${SAMEL_PDF_LOGO}"
+          alt="Logo SAMEL-Guinée">
+
+        <h1 class="brand-name">SAMEL-GUINÉE</h1>
+
+        <p class="brand-sub">
+          Syndicat des Acteurs de la Monnaie Électronique de Guinée
+        </p>
+
+        <p class="brand-motto">
+          Travail • Compétence • Solidarité
+        </p>
+      </header>
+
+      ${body}
+
+      <div class="footer">
+        SAMEL-GUINÉE — ON EST LÀ, POUR NOS DROITS ON SE BAT.
+      </div>
+
+      <script>
+        window.addEventListener("load", async () => {
+          const images = Array.from(document.images);
+
+          await Promise.all(images.map(img => {
+            if (img.complete) return Promise.resolve();
+
+            return new Promise(resolve => {
+              img.addEventListener("load", resolve, {once:true});
+              img.addEventListener("error", resolve, {once:true});
+            });
+          }));
+
+          setTimeout(() => window.print(), 500);
+        });
+      <\/script>
+    </body>
+    </html>
+  `);
+
+  win.document.close();
+}
+
+async function getMemberPhotoUrl(member) {
+  if (!member?.selfie_path) return "";
+
+  try {
+    const { data, error } = await client.storage
+      .from("member-selfies")
+      .createSignedUrl(member.selfie_path, 120);
+
+    if (error) throw error;
+
+    return data?.signedUrl || "";
+
+  } catch (err) {
+    console.warn("Photo PDF indisponible :", err);
+    return "";
+  }
+}
+
+/* PDF INDIVIDUEL */
+
+async function exportOneMemberPDF(id) {
+  const member = currentMembers.find(
+    m => String(m.id) === String(id)
+  );
+
+  if (!member) return alert("Membre introuvable.");
+
+  const printWindow = window.open("about:blank", "_blank");
+
+  if (!printWindow) {
+    alert("Autorisez les fenêtres pop-up pour télécharger le PDF.");
+    return;
+  }
+
+  printWindow.document.write(
+    "<p style='font-family:Arial;padding:20px'>Préparation de la fiche du membre…</p>"
+  );
+
+  const photoUrl = await getMemberPhotoUrl(member);
+
+  const fields = [
+    ["Numéro de membre", member.member_number],
+    ["Nom", member.nom],
+    ["Prénom", member.prenom],
+    ["Sexe", member.sexe],
+    ["Téléphone", member.telephone],
+    ["Numéro PDV", member.numero_pdv],
+    ["Région", member.region],
+    ["Ville", member.ville],
+    ["Commune", member.commune],
+    ["Emplacement", member.emplacement],
+    ["Poste occupé", member.poste_occupe],
+    ["Date d'inscription", formatDate(member.created_at)]
+  ];
+
+  const rows = fields.map(([label, value]) => `
+    <tr>
+      <th>${pdfEscape(label)}</th>
+      <td>${pdfEscape(value)}</td>
+    </tr>
+  `).join("");
+
+  const photo = photoUrl
+    ? `<img class="photo" src="${pdfEscape(photoUrl)}" alt="Photo du membre">`
+    : "";
+
+  openPrintableDocument(
+    `Fiche membre ${member.member_number}`,
+    `
+      <h2 class="document-title">Dossier individuel du membre</h2>
+
+      <div class="meta">
+        <span class="member-number">
+          Numéro de membre : ${pdfEscape(member.member_number)}
+        </span>
+      </div>
+
+      <div class="profile">
+        ${photo}
+        <div class="details">
+          <table><tbody>${rows}</tbody></table>
+        </div>
+      </div>
+    `,
+    false,
+    printWindow
+  );
+}
+
+/* PDF GENERAL */
+
+function exportAllMembersPDF() {
+  if (!currentMembers.length) {
+    return alert("Aucun membre à exporter.");
+  }
+
+  const rows = currentMembers.map(m => `
+    <tr>
+      <td>${pdfEscape(m.member_number)}</td>
+      <td>${pdfEscape(m.nom)} ${pdfEscape(m.prenom)}</td>
+      <td>${pdfEscape(m.sexe)}</td>
+      <td>${pdfEscape(m.telephone)}</td>
+      <td>${pdfEscape(m.numero_pdv)}</td>
+      <td>${pdfEscape(m.region)}</td>
+      <td>${pdfEscape(m.ville)}</td>
+      <td>${pdfEscape(m.commune)}</td>
+      <td>${pdfEscape(m.emplacement)}</td>
+      <td>${pdfEscape(formatDate(m.created_at))}</td>
+    </tr>
+  `).join("");
+
+  const body = `
+    <h2 class="document-title">Liste générale des membres</h2>
+
+    <div class="meta">
+      Nombre total de membres :
+      <strong>${currentMembers.length}</strong>
+      — Édité le ${new Date().toLocaleDateString("fr-FR")}
+    </div>
+
+    <table class="list-table">
+      <thead>
+        <tr>
+          <th>N°</th>
+          <th>Nom et prénom</th>
+          <th>Sexe</th>
+          <th>Téléphone</th>
+          <th>N° PDV</th>
+          <th>Région</th>
+          <th>Ville</th>
+          <th>Commune</th>
+          <th>Emplacement</th>
+          <th>Date d'inscription</th>
+        </tr>
+      </thead>
+
+      <tbody>${rows}</tbody>
+    </table>
+  `;
+
+  openPrintableDocument(
+    "Liste complète des membres SAMEL-Guinée",
+    body,
+    true
+  );
+}
+
+/* OUVERTURE SECURISEE DU SELFIE */
+
+async function openMemberPhoto(id) {
+  const member = currentMembers.find(
+    m => String(m.id) === String(id)
+  );
+
+  if (!member?.selfie_path) {
+    return alert("Aucun selfie disponible pour ce membre.");
+  }
+
+  try {
+    const { data, error } = await client.storage
+      .from("member-selfies")
+      .createSignedUrl(member.selfie_path, 120);
+
+    if (error) throw error;
+
+    if (!data?.signedUrl) {
+      throw new Error("Lien sécurisé de la photo indisponible.");
+    }
+
+    window.open(data.signedUrl, "_blank");
+
+  } catch (err) {
+    console.error("Erreur selfie :", err);
+    alert(`Impossible d'afficher le selfie : ${err.message}`);
+  }
+}
+
+/* RECHERCHE ET ACTUALISATION */
+
+if ($("refresh")) {
+  $("refresh").addEventListener("click", loadMembers);
+}
+
+if ($("search")) {
+  $("search").addEventListener("input", renderMembers);
+}
+
+/* CREATION D'UN ADMINISTRATEUR */
+
+if ($("create-admin")) {
+  $("create-admin").addEventListener("submit", async event => {
+    event.preventDefault();
+
+    if (!client || currentAdminRole !== "super_admin") {
+      status(
+        "admin-status",
+        "Seul le Super Administrateur peut créer un administrateur."
+      );
+      return;
+    }
+
+    const form = event.currentTarget;
+    const button = form.querySelector(
+      'button[type="submit"],button:not([type])'
+    );
+
+    try {
+      const { data: sessionData, error: sessionError } =
+        await client.auth.getSession();
+
+      if (sessionError) throw sessionError;
+
+      const session = sessionData?.session;
+
+      if (!session) {
+        throw new Error("Session administrateur introuvable.");
+      }
+
+      if (button) button.disabled = true;
+
+      status(
+        "admin-status",
+        "Création du compte administrateur en cours…"
+      );
+
+      const formData = Object.fromEntries(
+        new FormData(form).entries()
+      );
+
+      const { error } = await client.functions.invoke(
+        "admin-create-user",
+        {
+          body: formData,
+          headers: {
+            Authorization: `Bearer ${session.access_token}`
+          }
+        }
+      );
+
+      if (error) throw error;
+
+      status(
+        "admin-status",
+        "Compte administrateur créé avec succès."
+      );
+
+      form.reset();
+
+    } catch (err) {
+      console.error("Création administrateur :", err);
+
+      status(
+        "admin-status",
+        `Création impossible : ${err.message}`
+      );
+
+    } finally {
+      if (button) button.disabled = false;
+    }
+  });
+}
+
+/* DECONNEXION */
+
+if ($("logout")) {
+  $("logout").addEventListener("click", async () => {
+    try {
+      const { error } = await client.auth.signOut();
+
+      if (error) throw error;
+
+      currentAdminRole = null;
+      currentMembers = [];
+
+      if ($("admin-panel")) $("admin-panel").hidden = true;
+      if ($("login-form")) $("login-form").hidden = false;
+      if ($("login-password")) $("login-password").value = "";
+      if ($("members")) $("members").innerHTML = "";
+      if ($("member-management")) $("member-management").remove();
+
+      status("admin-status", "Vous êtes déconnecté.");
+
+    } catch (err) {
+      console.error("Déconnexion :", err);
+
+      status(
+        "admin-status",
+        `Erreur de déconnexion : ${err.message}`
+      );
+    }
+  });
+}
+
+/* RESTAURATION AUTOMATIQUE DE LA SESSION */
+
+async function restoreAdminSession() {
+  if (!client) return;
+
+  try {
+    const { data, error } = await client.auth.getSession();
+
+    if (error) throw error;
+
+    if (data?.session) {
+      await loadAdmin();
+    }
+
+  } catch (err) {
+    console.warn("Restauration session :", err);
+  }
+}
+
+if (client) {
+  restoreAdminSession();
+}
