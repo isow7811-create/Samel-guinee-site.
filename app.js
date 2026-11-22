@@ -1,5 +1,3 @@
-
-
 /* SAMEL-GUINEE — app.js complet
    Remplacer la clé ci-dessous par la clé Publishable du projet Supabase.
    Ne jamais utiliser ici une clé service_role, secret ou Resend. */
@@ -89,7 +87,9 @@ function resetSelfie() {
   stopCamera();
 }
 
-/* CAMERA ET SELFIE */
+/* =====================================================
+   CAMERA ET SELFIE
+===================================================== */
 
 if ($("start-camera")) {
   $("start-camera").addEventListener("click", async () => {
@@ -175,6 +175,7 @@ if ($("take-selfie")) {
       $("selfie-preview").hidden = false;
 
       video.hidden = true;
+
       stopCamera();
 
       $("take-selfie").hidden = true;
@@ -200,7 +201,9 @@ if ($("retake-selfie")) {
   });
 }
 
-/* INSCRIPTION DES MEMBRES */
+/* =====================================================
+   INSCRIPTION DES MEMBRES
+===================================================== */
 
 if (!configured) {
   status(
@@ -245,11 +248,16 @@ if ($("member-form")) {
 
     const fd = new FormData(form);
 
+    // Le serveur contrôle le numéro de membre.
+    // Si le champ est vide, il attribue automatiquement le prochain numéro.
     fd.append("selfie", selfieBlob, "selfie.jpg");
 
     if (button) button.disabled = true;
 
-    status("form-status", "Envoi de votre inscription en cours…");
+    status(
+      "form-status",
+      "Envoi de votre inscription en cours…"
+    );
 
     try {
       const { data, error } = await client.functions.invoke(
@@ -301,7 +309,9 @@ if ($("member-form")) {
   });
 }
 
-/* PROFIL ADMINISTRATEUR */
+/* =====================================================
+   PROFIL ADMINISTRATEUR
+===================================================== */
 
 async function getAdminProfile(userId) {
   const first = await client
@@ -347,7 +357,9 @@ async function getAdminProfile(userId) {
   );
 }
 
-/* CONNEXION ADMINISTRATEUR */
+/* =====================================================
+   CONNEXION ADMINISTRATEUR
+===================================================== */
 
 if ($("login-form")) {
   $("login-form").addEventListener("submit", async event => {
@@ -398,7 +410,9 @@ if ($("login-form")) {
   });
 }
 
-/* CHARGEMENT DU TABLEAU DE BORD */
+/* =====================================================
+   CHARGEMENT DU TABLEAU DE BORD ADMINISTRATEUR
+===================================================== */
 
 async function loadAdmin() {
   if (!client) return;
@@ -414,8 +428,13 @@ async function loadAdmin() {
     const user = userData?.user;
 
     if (!user) {
-      if ($("admin-panel")) $("admin-panel").hidden = true;
-      if ($("login-form")) $("login-form").hidden = false;
+      if ($("admin-panel")) {
+        $("admin-panel").hidden = true;
+      }
+
+      if ($("login-form")) {
+        $("login-form").hidden = false;
+      }
 
       status("admin-status", "Veuillez vous connecter.");
       return;
@@ -450,8 +469,13 @@ async function loadAdmin() {
       return;
     }
 
-    if ($("login-form")) $("login-form").hidden = true;
-    if ($("admin-panel")) $("admin-panel").hidden = false;
+    if ($("login-form")) {
+      $("login-form").hidden = true;
+    }
+
+    if ($("admin-panel")) {
+      $("admin-panel").hidden = false;
+    }
 
     if ($("role")) {
       $("role").textContent =
@@ -463,7 +487,8 @@ async function loadAdmin() {
     }
 
     if ($("admin-create")) {
-      $("admin-create").hidden = profile.role !== "super_admin";
+      $("admin-create").hidden =
+        profile.role !== "super_admin";
     }
 
     ensureMemberManagementUI();
@@ -487,7 +512,9 @@ async function loadAdmin() {
   }
 }
 
-/* LISTE DES MEMBRES */
+/* =====================================================
+   CHARGEMENT DE LA LISTE DES MEMBRES
+===================================================== */
 
 async function loadMembers() {
   const box = $("members");
@@ -517,7 +544,9 @@ async function loadMembers() {
   renderMembers();
 }
 
-/* INTERFACE DE GESTION DES MEMBRES */
+/* =====================================================
+   INTERFACE DE GESTION DES MEMBRES
+===================================================== */
 
 function ensureMemberManagementUI() {
   const panel = $("admin-panel");
@@ -535,33 +564,49 @@ function ensureMemberManagementUI() {
     <h3 style="color:#087b46">Gestion des membres</h3>
 
     <div style="display:flex;gap:8px;flex-wrap:wrap">
-      <button type="button" id="show-add-member"
-        style="background:#087b46;color:white;padding:12px 18px;border:0;border-radius:8px">
+
+      <button
+        type="button"
+        id="show-add-member"
+        style="background:#087b46;color:white;padding:12px 18px;border:0;border-radius:8px"
+      >
         + Ajouter un membre
       </button>
 
-      <button type="button" id="export-all-members-pdf"
-        style="background:#1d4ed8;color:white;padding:12px 18px;border:0;border-radius:8px">
+      <button
+        type="button"
+        id="export-all-members-pdf"
+        style="background:#1d4ed8;color:white;padding:12px 18px;border:0;border-radius:8px"
+      >
         Télécharger la liste complète en PDF
       </button>
+
     </div>
 
-    <form id="manual-member-form" hidden
-      style="margin-top:16px;display:grid;gap:10px">
+    <form
+      id="manual-member-form"
+      hidden
+      style="margin-top:16px;display:grid;gap:10px"
+    >
 
-      <h4 id="manual-form-title">Ajouter un membre (sans selfie)</h4>
+      <h4 id="manual-form-title">
+        Ajouter un membre (sans selfie)
+      </h4>
 
       <input type="hidden" name="id">
 
-      <label>Nom *
+      <label>
+        Nom *
         <input name="nom" required maxlength="100">
       </label>
 
-      <label>Prénom *
+      <label>
+        Prénom *
         <input name="prenom" required maxlength="100">
       </label>
 
-      <label>Sexe *
+      <label>
+        Sexe *
         <select name="sexe" required>
           <option value="">Choisir</option>
           <option>Féminin</option>
@@ -569,35 +614,43 @@ function ensureMemberManagementUI() {
         </select>
       </label>
 
-      <label>Téléphone *
+      <label>
+        Téléphone *
         <input name="telephone" type="tel" required>
       </label>
 
-      <label>Numéro PDV *
+      <label>
+        Numéro PDV *
         <input name="numero_pdv" required>
       </label>
 
-      <label>Région
+      <label>
+        Région
         <input name="region">
       </label>
 
-      <label>Ville
+      <label>
+        Ville
         <input name="ville">
       </label>
 
-      <label>Commune
+      <label>
+        Commune
         <input name="commune">
       </label>
 
-      <label>Emplacement
+      <label>
+        Emplacement
         <input name="emplacement">
       </label>
 
-      <label>Poste occupé
+      <label>
+        Poste occupé
         <input name="poste_occupe">
       </label>
 
       <div style="display:flex;gap:8px;flex-wrap:wrap">
+
         <button type="submit" id="save-manual-member">
           Enregistrer
         </button>
@@ -605,9 +658,11 @@ function ensureMemberManagementUI() {
         <button type="button" id="cancel-manual-member">
           Annuler
         </button>
+
       </div>
 
       <p id="manual-member-status" role="status"></p>
+
     </form>
   `;
 
@@ -686,7 +741,9 @@ function openManualMemberForm(member) {
   });
 }
 
-/* APPEL DE LA FONCTION DE GESTION */
+/* =====================================================
+   APPEL DE LA FONCTION DE GESTION DES MEMBRES
+===================================================== */
 
 async function invokeMemberManagement(body) {
   const {
@@ -723,6 +780,7 @@ async function invokeMemberManagement(body) {
       if (bodyError?.error) {
         message = bodyError.error;
       }
+
     } catch (_) {}
 
     throw new Error(message);
@@ -735,7 +793,9 @@ async function invokeMemberManagement(body) {
   return data;
 }
 
-/* AJOUT ET MODIFICATION */
+/* =====================================================
+   AJOUT ET MODIFICATION D'UN MEMBRE
+===================================================== */
 
 async function saveManualMember(event) {
   event.preventDefault();
@@ -782,7 +842,9 @@ async function saveManualMember(event) {
   }
 }
 
-/* SUPPRESSION D'UN MEMBRE */
+/* =====================================================
+   SUPPRESSION D'UN MEMBRE
+===================================================== */
 
 async function deleteMember(id) {
   const member = currentMembers.find(
@@ -821,7 +883,9 @@ async function deleteMember(id) {
   }
 }
 
-/* AFFICHAGE DU TABLEAU DES MEMBRES */
+/* =====================================================
+   AFFICHAGE DU TABLEAU DES MEMBRES
+===================================================== */
 
 function renderMembers() {
   const box = $("members");
@@ -861,11 +925,15 @@ function renderMembers() {
 
   box.innerHTML = `
     <p>
-      <strong>Nombre de membres affichés : ${rows.length}</strong>
+      <strong>
+        Nombre de membres affichés : ${rows.length}
+      </strong>
     </p>
 
     <div style="overflow-x:auto">
+
       <table>
+
         <thead>
           <tr>
             <th>N° membre</th>
@@ -883,8 +951,10 @@ function renderMembers() {
         </thead>
 
         <tbody>
+
           ${rows.map(m => `
             <tr>
+
               <td>${escapeHTML(m.member_number)}</td>
 
               <td>
@@ -900,43 +970,77 @@ function renderMembers() {
 
               <td>
                 ${escapeHTML(
-                  [m.region,
-
-m.region, m.ville, m.commune
-                ].filter(Boolean).join(" / ")
+                  [m.region, m.ville, m.commune]
+                    .filter(Boolean)
+                    .join(" / ")
                 )}
               </td>
 
               <td>${escapeHTML(m.emplacement)}</td>
+
               <td>${escapeHTML(m.poste_occupe)}</td>
+
               <td>${escapeHTML(formatDate(m.created_at))}</td>
 
               <td>
-                ${m.selfie_path
-                  ? `<button type="button" data-photo="${escapeHTML(m.id)}">Voir le selfie</button>`
-                  : "Non disponible"}
+                ${
+                  m.selfie_path
+                    ? `<button type="button" data-photo="${escapeHTML(m.id)}">Voir le selfie</button>`
+                    : "Non disponible"
+                }
               </td>
 
-              ${canManage ? `
-                <td style="white-space:nowrap">
-                  <button type="button" data-pdf="${escapeHTML(m.id)}">PDF</button>
-                  <button type="button" data-edit="${escapeHTML(m.id)}">Modifier</button>
-                  <button type="button" data-delete="${escapeHTML(m.id)}">Supprimer</button>
-                </td>
-              ` : ""}
+              ${
+                canManage
+                  ? `
+                    <td style="white-space:nowrap">
+
+                      <button
+                        type="button"
+                        data-pdf="${escapeHTML(m.id)}"
+                      >
+                        PDF
+                      </button>
+
+                      <button
+                        type="button"
+                        data-edit="${escapeHTML(m.id)}"
+                      >
+                        Modifier
+                      </button>
+
+                      <button
+                        type="button"
+                        data-delete="${escapeHTML(m.id)}"
+                      >
+                        Supprimer
+                      </button>
+
+                    </td>
+                  `
+                  : ""
+              }
+
             </tr>
           `).join("")}
+
         </tbody>
+
       </table>
+
     </div>
   `;
 
   box.querySelectorAll("[data-photo]").forEach(btn => {
-    btn.addEventListener("click", () => openMemberPhoto(btn.dataset.photo));
+    btn.addEventListener("click", () => {
+      openMemberPhoto(btn.dataset.photo);
+    });
   });
 
   box.querySelectorAll("[data-pdf]").forEach(btn => {
-    btn.addEventListener("click", () => exportOneMemberPDF(btn.dataset.pdf));
+    btn.addEventListener("click", () => {
+      exportOneMemberPDF(btn.dataset.pdf);
+    });
   });
 
   box.querySelectorAll("[data-edit]").forEach(btn => {
@@ -944,16 +1048,21 @@ m.region, m.ville, m.commune
       const member = currentMembers.find(
         m => String(m.id) === btn.dataset.edit
       );
+
       openManualMemberForm(member);
     });
   });
 
   box.querySelectorAll("[data-delete]").forEach(btn => {
-    btn.addEventListener("click", () => deleteMember(btn.dataset.delete));
+    btn.addEventListener("click", () => {
+      deleteMember(btn.dataset.delete);
+    });
   });
 }
 
-/* DOCUMENTS PDF SAMEL-GUINEE */
+/* =====================================================
+   EXPORT PDF : IMPRESSION ET ENREGISTREMENT EN PDF
+===================================================== */
 
 function pdfEscape(value) {
   return escapeHTML(
@@ -963,15 +1072,28 @@ function pdfEscape(value) {
   );
 }
 
-/* Logo intégré */
+/* Logo officiel hébergé dans le compartiment public samel-assets */
 const SAMEL_PDF_LOGO =
-  "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAoHBwgHBgoICAgLCgoLDhgQDg0NDh0VFhEYIx8lJCIfIiEmKzcvJik0KSEiMEExNDk7Pj4+JS5ESUM8SDc9Pjv/2wBDAQoLCw4NDhwQEBw7KCIoOzs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozv/wAARCAB4AHgDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqqusra6vsbKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/9oACAEBAAA/APu0ooor+ZP3E//Z";
+  "https://muzxcqrcalvmjzhjyeat.supabase.co/storage/v1/object/public/samel-assets/logo.jpg";
 
-function openPrintableDocument(title, body, landscape = false, existingWindow = null) {
-  const win = existingWindow || window.open("about:blank", "_blank");
+function openPrintableDocument(
+  title,
+  body,
+  landscape = false,
+  existingWindow = null
+) {
+  // La fenêtre doit être ouverte directement pendant le clic.
+  // Cela évite le blocage des fenêtres sur les téléphones.
+
+  const win = existingWindow || window.open(
+    "about:blank",
+    "_blank"
+  );
 
   if (!win || win.closed) {
-    alert("Le navigateur a bloqué le document. Autorisez les fenêtres pop-up puis réessayez.");
+    alert(
+      "Le navigateur a bloqué l'ouverture du document. Autorisez les fenêtres pop-up pour ce site, puis réessayez."
+    );
     return;
   }
 
@@ -979,33 +1101,69 @@ function openPrintableDocument(title, body, landscape = false, existingWindow = 
 
   win.document.write(`
     <!doctype html>
+
     <html lang="fr">
+
     <head>
+
       <meta charset="utf-8">
-      <meta name="viewport" content="width=device-width,initial-scale=1">
+
+      <meta
+        name="viewport"
+        content="width=device-width,initial-scale=1"
+      >
+
       <title>${pdfEscape(title)}</title>
 
       <style>
+
         @page {
           size: A4 ${landscape ? "landscape" : "portrait"};
-          margin: 13mm;
+          margin: 12mm;
         }
 
-        * { box-sizing: border-box; }
+        * {
+          box-sizing: border-box;
+        }
 
         body {
           font-family: Arial, Helvetica, sans-serif;
-          color: #24352b;
+          color: #25332b;
           margin: 0;
           font-size: 12px;
           background: #fff;
+          line-height: 1.45;
+        }
+
+        .actions {
+          margin: 0 0 14px;
+          text-align: right;
+        }
+
+        .actions button {
+          padding: 10px 16px;
+          background: #087b46;
+          color: white;
+          border: 0;
+          border-radius: 7px;
+          font-weight: 700;
         }
 
         .letterhead {
           text-align: center;
+          padding: 4px 8px 14px;
           border-bottom: 4px solid #087b46;
-          padding-bottom: 13px;
-          margin-bottom: 22px;
+          margin-bottom: 20px;
+          position: relative;
+        }
+
+        .letterhead:after {
+          content: "";
+          display: block;
+          width: 90px;
+          height: 3px;
+          background: #e7b82c;
+          margin: 7px auto 0;
         }
 
         .brand-logo {
@@ -1019,84 +1177,66 @@ function openPrintableDocument(title, body, landscape = false, existingWindow = 
         .brand-name {
           font-size: 25px;
           letter-spacing: 1.2px;
-          color: #087b46;
-          margin: 4px 0;
           font-weight: 800;
+          color: #087b46;
+          margin: 0;
         }
 
         .brand-sub {
-          font-size: 12px;
-          margin: 5px 0;
+          font-size: 13px;
+          color: #26332c;
+          margin: 4px 0;
         }
 
         .brand-motto {
+          font-weight: 700;
           font-size: 13px;
-          font-weight: bold;
-          margin-top: 8px;
+          margin: 6px 0 0;
+          color: #26332c;
         }
 
         .document-title {
-          font-size: 18px;
+          text-align: center;
           color: #087b46;
+          font-size: 19px;
+          font-weight: 800;
+          letter-spacing: .4px;
+          margin: 18px 0 5px;
           text-transform: uppercase;
-          margin-bottom: 12px;
-          padding-bottom: 8px;
-          border-bottom: 1px solid #d5e5da;
         }
 
         .meta {
+          text-align: center;
+          color: #647168;
           font-size: 11px;
-          color: #56665c;
-          margin-bottom: 14px;
+          margin: 0 0 17px;
         }
 
         .member-number {
           display: inline-block;
-          background: #eaf4ed;
-          border-left: 4px solid #087b46;
-          padding: 8px 12px;
-          font-weight: bold;
-          color: #155b39;
-          border-radius: 3px;
-        }
-
-        table {
-          width: 100%;
-          border-collapse: collapse;
-          font-size: 11px;
-        }
-
-        th, td {
-          border: 1px solid #cbd8cf;
-          padding: 8px;
-          text-align: left;
-          vertical-align: top;
-        }
-
-        th {
           background: #e8f3ec;
-          color: #124b30;
-          width: 36%;
-        }
-
-        tbody tr:nth-child(even) td {
-          background: #f8fbf9;
+          border: 1px solid #b9d7c4;
+          color: #075b35;
+          border-radius: 20px;
+          padding: 5px 13px;
+          font-weight: 700;
         }
 
         .profile {
           display: flex;
           gap: 18px;
           align-items: flex-start;
+          margin-top: 12px;
         }
 
         .photo {
-          width: 135px;
-          height: 160px;
+          width: 132px;
+          height: 154px;
           object-fit: cover;
-          border: 3px solid #e0eee4;
-          border-radius: 5px;
+          border: 3px solid #e5efe8;
+          border-radius: 8px;
           padding: 2px;
-          background: white;
+          background: #fff;
         }
 
         .details {
@@ -1104,48 +1244,104 @@ function openPrintableDocument(title, body, landscape = false, existingWindow = 
           min-width: 0;
         }
 
-        .details table { font-size: 12px; }
-        .details th { width: 38%; }
+        table {
+          width: 100%;
+          border-collapse: collapse;
+          font-size: 10px;
+          page-break-inside: auto;
+        }
+
+        tr {
+          page-break-inside: avoid;
+          break-inside: avoid;
+        }
+
+        th,
+        td {
+          border: 1px solid #cbd8cf;
+          padding: 7px 8px;
+          text-align: left;
+          vertical-align: top;
+        }
+
+        th {
+          background: #eaf4ed;
+          color: #145438;
+          width: 34%;
+          font-weight: 700;
+        }
+
+        td {
+          background: #fff;
+        }
+
+        .details table {
+          font-size: 11px;
+        }
+
+        .details th {
+          width: 38%;
+        }
 
         .footer {
-          margin-top: 24px;
-          border-top: 1px solid #d5e0d8;
+          margin-top: 22px;
+          border-top: 1px solid #cbd8cf;
           padding-top: 9px;
           text-align: center;
           font-size: 10px;
-          color: #526258;
+          color: #53645a;
         }
 
-        .actions {
-          margin-bottom: 15px;
-          text-align: right;
+        .footer strong {
+          color: #087b46;
         }
 
-        .actions button {
-          padding: 10px 16px;
+        thead {
+          display: table-header-group;
+        }
+
+        thead th {
           background: #087b46;
-          color: white;
-          border: 0;
-          border-radius: 5px;
-          font-weight: bold;
+          color: #fff;
+          font-size: 9px;
         }
 
-        .list-table { font-size: 9px; }
-        .list-table th {
-          background: #087b46;
-          color: white;
-          padding: 7px 5px;
+        tbody tr:nth-child(even) td {
+          background: #f6faf7;
         }
-
-        .list-table td { padding: 6px 5px; }
 
         @media print {
-          .actions { display: none; }
+          .actions {
+            display: none;
+          }
+
+          body {
+            print-color-adjust: exact;
+            -webkit-print-color-adjust: exact;
+          }
         }
+
+        @media(max-width:600px) {
+          .profile {
+            gap: 10px;
+          }
+
+          .photo {
+            width: 105px;
+            height: 125px;
+          }
+
+          .details table {
+            font-size: 10px;
+          }
+        }
+
       </style>
+
     </head>
 
     <body>
+
       <div class="actions">
         <button onclick="window.print()">
           Imprimer / Enregistrer en PDF
@@ -1153,11 +1349,16 @@ function openPrintableDocument(title, body, landscape = false, existingWindow = 
       </div>
 
       <header class="letterhead">
-        <img class="brand-logo"
-          src="${SAMEL_PDF_LOGO}"
-          alt="Logo SAMEL-Guinée">
 
-        <h1 class="brand-name">SAMEL-GUINÉE</h1>
+        <img
+          class="brand-logo"
+          src="${SAMEL_PDF_LOGO}"
+          alt="Logo officiel SAMEL-Guinée"
+        >
+
+        <h1 class="brand-name">
+          SAMEL-GUINÉE
+        </h1>
 
         <p class="brand-sub">
           Syndicat des Acteurs de la Monnaie Électronique de Guinée
@@ -1166,42 +1367,70 @@ function openPrintableDocument(title, body, landscape = false, existingWindow = 
         <p class="brand-motto">
           Travail • Compétence • Solidarité
         </p>
+
       </header>
 
       ${body}
 
       <div class="footer">
-        SAMEL-GUINÉE — ON EST LÀ, POUR NOS DROITS ON SE BAT.
+        <strong>SAMEL-GUINÉE</strong>
+        — ON EST LÀ, POUR NOS DROITS ON SE BAT.
       </div>
 
       <script>
+
         window.addEventListener("load", async () => {
+
           const images = Array.from(document.images);
 
           await Promise.all(images.map(img => {
-            if (img.complete) return Promise.resolve();
+
+            if (img.complete) {
+              return Promise.resolve();
+            }
 
             return new Promise(resolve => {
-              img.addEventListener("load", resolve, {once:true});
-              img.addEventListener("error", resolve, {once:true});
+
+              img.addEventListener(
+                "load",
+                resolve,
+                { once: true }
+              );
+
+              img.addEventListener(
+                "error",
+                resolve,
+                { once: true }
+              );
+
             });
+
           }));
 
-          setTimeout(() => window.print(), 500);
+          setTimeout(() => window.print(), 450);
+
         });
+
       <\/script>
+
     </body>
+
     </html>
   `);
 
   win.document.close();
 }
 
+/* =====================================================
+   LIEN SECURISE POUR LA PHOTO DU MEMBRE
+===================================================== */
+
 async function getMemberPhotoUrl(member) {
   if (!member?.selfie_path) return "";
 
   try {
-    const { data, error } = await client.storage
+    const { data, error } = await client
+      .storage
       .from("member-selfies")
       .createSignedUrl(member.selfie_path, 120);
 
@@ -1210,30 +1439,46 @@ async function getMemberPhotoUrl(member) {
     return data?.signedUrl || "";
 
   } catch (err) {
-    console.warn("Photo PDF indisponible :", err);
+    console.warn(
+      "Photo PDF indisponible :",
+      err
+    );
+
     return "";
   }
 }
 
-/* PDF INDIVIDUEL */
+/* =====================================================
+   TELECHARGEMENT PDF INDIVIDUEL
+===================================================== */
 
 async function exportOneMemberPDF(id) {
   const member = currentMembers.find(
     m => String(m.id) === String(id)
   );
 
-  if (!member) return alert("Membre introuvable.");
+  if (!member) {
+    return alert("Membre introuvable.");
+  }
 
-  const printWindow = window.open("about:blank", "_blank");
+  // Ouvrir la fenêtre immédiatement pendant le clic.
+  const printWindow = window.open(
+    "about:blank",
+    "_blank"
+  );
 
   if (!printWindow) {
-    alert("Autorisez les fenêtres pop-up pour télécharger le PDF.");
+    alert(
+      "Le navigateur a bloqué la fenêtre du PDF. Autorisez les fenêtres pop-up pour ce site, puis réessayez."
+    );
     return;
   }
 
-  printWindow.document.write(
-    "<p style='font-family:Arial;padding:20px'>Préparation de la fiche du membre…</p>"
-  );
+  printWindow.document.write(`
+    <p style="font-family:Arial;padding:20px">
+      Préparation de la fiche du membre…
+    </p>
+  `);
 
   const photoUrl = await getMemberPhotoUrl(member);
 
@@ -1260,33 +1505,51 @@ async function exportOneMemberPDF(id) {
   `).join("");
 
   const photo = photoUrl
-    ? `<img class="photo" src="${pdfEscape(photoUrl)}" alt="Photo du membre">`
+    ? `
+      <img
+        class="photo"
+        src="${pdfEscape(photoUrl)}"
+        alt="Photo du membre"
+      >
+    `
     : "";
 
   openPrintableDocument(
     `Fiche membre ${member.member_number}`,
+
     `
-      <h2 class="document-title">Dossier individuel du membre</h2>
+      <h2 class="document-title">
+        Dossier individuel du membre
+      </h2>
 
       <div class="meta">
         <span class="member-number">
-          Numéro de membre : ${pdfEscape(member.member_number)}
+          Numéro de membre :
+          ${pdfEscape(member.member_number)}
         </span>
       </div>
 
       <div class="profile">
+
         ${photo}
+
         <div class="details">
-          <table><tbody>${rows}</tbody></table>
+          <table>
+            ${rows}
+          </table>
         </div>
+
       </div>
     `,
+
     false,
     printWindow
   );
 }
 
-/* PDF GENERAL */
+/* =====================================================
+   TELECHARGEMENT PDF DE LA LISTE GENERALE
+===================================================== */
 
 function exportAllMembersPDF() {
   if (!currentMembers.length) {
@@ -1295,30 +1558,51 @@ function exportAllMembersPDF() {
 
   const rows = currentMembers.map(m => `
     <tr>
+
       <td>${pdfEscape(m.member_number)}</td>
-      <td>${pdfEscape(m.nom)} ${pdfEscape(m.prenom)}</td>
+
+      <td>
+        ${pdfEscape(m.nom)}
+        ${pdfEscape(m.prenom)}
+      </td>
+
       <td>${pdfEscape(m.sexe)}</td>
+
       <td>${pdfEscape(m.telephone)}</td>
+
       <td>${pdfEscape(m.numero_pdv)}</td>
+
       <td>${pdfEscape(m.region)}</td>
+
       <td>${pdfEscape(m.ville)}</td>
+
       <td>${pdfEscape(m.commune)}</td>
+
       <td>${pdfEscape(m.emplacement)}</td>
+
       <td>${pdfEscape(formatDate(m.created_at))}</td>
+
     </tr>
   `).join("");
 
   const body = `
-    <h2 class="document-title">Liste générale des membres</h2>
+
+    <h2 class="document-title">
+      Liste générale des membres
+    </h2>
 
     <div class="meta">
       Nombre total de membres :
       <strong>${currentMembers.length}</strong>
-      — Édité le ${new Date().toLocaleDateString("fr-FR")}
+
+      · Édité le
+      ${new Date().toLocaleDateString("fr-FR")}
     </div>
 
-    <table class="list-table">
+    <table>
+
       <thead>
+
         <tr>
           <th>N°</th>
           <th>Nom et prénom</th>
@@ -1331,9 +1615,13 @@ function exportAllMembersPDF() {
           <th>Emplacement</th>
           <th>Date d'inscription</th>
         </tr>
+
       </thead>
 
-      <tbody>${rows}</tbody>
+      <tbody>
+        ${rows}
+      </tbody>
+
     </table>
   `;
 
@@ -1344,7 +1632,9 @@ function exportAllMembersPDF() {
   );
 }
 
-/* OUVERTURE SECURISEE DU SELFIE */
+/* =====================================================
+   OUVERTURE SECURISEE DU SELFIE
+===================================================== */
 
 async function openMemberPhoto(id) {
   const member = currentMembers.find(
@@ -1352,29 +1642,42 @@ async function openMemberPhoto(id) {
   );
 
   if (!member?.selfie_path) {
-    return alert("Aucun selfie disponible pour ce membre.");
+    alert("Aucun selfie disponible pour ce membre.");
+    return;
   }
 
   try {
-    const { data, error } = await client.storage
+    const { data, error } = await client
+      .storage
       .from("member-selfies")
       .createSignedUrl(member.selfie_path, 120);
 
     if (error) throw error;
 
     if (!data?.signedUrl) {
-      throw new Error("Lien sécurisé de la photo indisponible.");
+      throw new Error(
+        "Lien sécurisé de la photo indisponible."
+      );
     }
 
-    window.open(data.signedUrl, "_blank");
+    window.open(
+      data.signedUrl,
+      "_blank",
+      "noopener,noreferrer"
+    );
 
   } catch (err) {
     console.error("Erreur selfie :", err);
-    alert(`Impossible d'afficher le selfie : ${err.message}`);
+
+    alert(
+      `Impossible d'afficher le selfie : ${err.message}`
+    );
   }
 }
 
-/* RECHERCHE ET ACTUALISATION */
+/* =====================================================
+   RECHERCHE ET ACTUALISATION
+===================================================== */
 
 if ($("refresh")) {
   $("refresh").addEventListener("click", loadMembers);
@@ -1384,7 +1687,10 @@ if ($("search")) {
   $("search").addEventListener("input", renderMembers);
 }
 
-/* CREATION D'UN ADMINISTRATEUR */
+/* =====================================================
+   CREATION D'UN ADMINISTRATEUR
+   Réservée au Super Administrateur
+===================================================== */
 
 if ($("create-admin")) {
   $("create-admin").addEventListener("submit", async event => {
@@ -1399,20 +1705,25 @@ if ($("create-admin")) {
     }
 
     const form = event.currentTarget;
+
     const button = form.querySelector(
       'button[type="submit"],button:not([type])'
     );
 
     try {
-      const { data: sessionData, error: sessionError } =
-        await client.auth.getSession();
+      const {
+        data: sessionData,
+        error: sessionError
+      } = await client.auth.getSession();
 
       if (sessionError) throw sessionError;
 
       const session = sessionData?.session;
 
       if (!session) {
-        throw new Error("Session administrateur introuvable.");
+        throw new Error(
+          "Session administrateur introuvable."
+        );
       }
 
       if (button) button.disabled = true;
@@ -1459,7 +1770,9 @@ if ($("create-admin")) {
   });
 }
 
-/* DECONNEXION */
+/* =====================================================
+   DECONNEXION
+===================================================== */
 
 if ($("logout")) {
   $("logout").addEventListener("click", async () => {
@@ -1471,13 +1784,30 @@ if ($("logout")) {
       currentAdminRole = null;
       currentMembers = [];
 
-      if ($("admin-panel")) $("admin-panel").hidden = true;
-      if ($("login-form")) $("login-form").hidden = false;
-      if ($("login-password")) $("login-password").value = "";
-      if ($("members")) $("members").innerHTML = "";
-      if ($("member-management")) $("member-management").remove();
+      if ($("admin-panel")) {
+        $("admin-panel").hidden = true;
+      }
 
-      status("admin-status", "Vous êtes déconnecté.");
+      if ($("login-form")) {
+        $("login-form").hidden = false;
+      }
+
+      if ($("login-password")) {
+        $("login-password").value = "";
+      }
+
+      if ($("members")) {
+        $("members").innerHTML = "";
+      }
+
+      if ($("member-management")) {
+        $("member-management").remove();
+      }
+
+      status(
+        "admin-status",
+        "Vous êtes déconnecté."
+      );
 
     } catch (err) {
       console.error("Déconnexion :", err);
@@ -1490,7 +1820,9 @@ if ($("logout")) {
   });
 }
 
-/* RESTAURATION AUTOMATIQUE DE LA SESSION */
+/* =====================================================
+   RESTAURATION AUTOMATIQUE DE LA SESSION
+===================================================== */
 
 async function restoreAdminSession() {
   if (!client) return;
@@ -1505,7 +1837,10 @@ async function restoreAdminSession() {
     }
 
   } catch (err) {
-    console.warn("Restauration session :", err);
+    console.warn(
+      "Restauration session :",
+      err
+    );
   }
 }
 
