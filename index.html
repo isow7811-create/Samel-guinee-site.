@@ -1,4 +1,5 @@
 
+
 <!doctype html>
 <html lang="fr">
 <head>
@@ -8,6 +9,7 @@
   <link rel="stylesheet" href="style.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
+
 <body>
 
 <header>
@@ -21,6 +23,7 @@
 </header>
 
 <main>
+
   <div class="notice">
     <b>AVIS IMPORTANT</b><br>
     Cette plateforme est exclusivement destinée aux acteurs de la monnaie électronique exerçant en République de Guinée. Seules ces personnes sont invitées à s'identifier.
@@ -31,7 +34,9 @@
     <p>Les champs marqués * sont obligatoires.</p>
 
     <form id="member-form">
+
       <div class="fields">
+
         <label>Nom *
           <input name="nom" required maxlength="100">
         </label>
@@ -48,44 +53,71 @@
           </select>
         </label>
 
-        <label>Région / Ville / Commune *
-          <input name="region_ville_commune" required placeholder="Ex. Conakry / Ratoma / Cosa">
+        <label>Région *
+          <input name="region" required maxlength="100" placeholder="Ex. Conakry">
+        </label>
+
+        <label>Ville *
+          <input name="ville" required maxlength="100" placeholder="Ex. Conakry">
+        </label>
+
+        <label>Commune *
+          <input name="commune" required maxlength="100" placeholder="Ex. Ratoma">
         </label>
 
         <label>Emplacement *
-          <input name="emplacement" required>
+          <input name="emplacement" required maxlength="200">
         </label>
 
         <label>Numéro personnel *
-          <input name="telephone" required type="tel">
+          <input name="telephone" required type="tel" maxlength="30">
         </label>
 
         <label>Numéro PDV *
-          <input name="numero_pdv" required>
+          <input name="numero_pdv" required maxlength="50">
         </label>
 
         <label>Poste occupé (facultatif)
-          <input name="poste_occupe">
+          <input name="poste_occupe" maxlength="100">
         </label>
 
-        <label>Numéro de membre (si vous avez déjà une carte)
-          <input name="numero_existant" type="number" min="1" max="21" placeholder="Laisser vide si nouveau membre">
+        <label>Numéro de carte d'origine (si vous avez déjà une carte)
+          <input
+            name="numero_existant"
+            type="number"
+            min="22"
+            step="1"
+            placeholder="Laisser vide si nouveau membre">
         </label>
+
       </div>
 
       <div class="camera-box">
         <h3>Selfie du membre *</h3>
+
         <video id="camera-video" autoplay playsinline hidden></video>
         <canvas id="camera-canvas" hidden></canvas>
         <img id="selfie-preview" alt="Aperçu du selfie" hidden>
 
         <div class="camera-actions">
-          <button type="button" id="start-camera">Ouvrir la caméra</button>
-          <button type="button" id="take-selfie" hidden>Prendre le selfie</button>
-          <button type="button" id="retake-selfie" hidden>Reprendre la photo</button>
+
+          <button type="button" id="start-camera">
+            Ouvrir la caméra
+          </button>
+
+          <button type="button" id="take-selfie" hidden>
+            Prendre le selfie
+          </button>
+
+          <button type="button" id="retake-selfie" hidden>
+            Reprendre la photo
+          </button>
+
         </div>
 
-        <p class="hint">La galerie n'est pas proposée : prenez votre selfie directement avec la caméra du téléphone.</p>
+        <p class="hint">
+          La galerie n'est pas proposée : prenez votre selfie directement avec la caméra du téléphone.
+        </p>
       </div>
 
       <label class="consent">
@@ -93,62 +125,116 @@
         J'atteste être un acteur de la monnaie électronique en Guinée et consens à l'enregistrement des informations fournies pour la gestion de mon adhésion.
       </label>
 
-      <button type="submit">Envoyer mon inscription</button>
+      <button type="submit">
+        Envoyer mon inscription
+      </button>
+
       <p id="form-status" role="status"></p>
+
     </form>
   </section>
 
   <section class="card">
     <h2>Nous contacter</h2>
-    <p><b>Siège social :</b> Conakry / Ratoma / Cosa – Bantounka</p>
-    <p><b>Téléphone :</b> <a href="tel:627308730">627 30 87 30</a></p>
-    <p><b>E-mail :</b> <a href="mailto:centregeneral9@gmail.com">centregeneral9@gmail.com</a></p>
-    <p><b>Référence :</b> SAMEL-Guinée / FESABAG / USTG</p>
+
+    <p>
+      <b>Siège social :</b>
+      Conakry / Ratoma / Cosa – Bantounka
+    </p>
+
+    <p>
+      <b>Téléphone :</b>
+      <a href="tel:627308730">627 30 87 30</a>
+    </p>
+
+    <p>
+      <b>E-mail :</b>
+      <a href="mailto:samelguinee224@gmail.com">
+        samelguinee224@gmail.com
+      </a>
+    </p>
+
+    <p>
+      <b>Référence :</b>
+      SAMEL-Guinée / FESABAG / USTG
+    </p>
   </section>
 
   <section class="card">
     <h2>Espace administration</h2>
 
     <form id="login-form">
+
       <label>E-mail
         <input id="login-email" type="email" required>
       </label>
+
       <label>Mot de passe
         <input id="login-password" type="password" required>
       </label>
-      <button>Se connecter</button>
+
+      <button type="submit">Se connecter</button>
+
     </form>
 
     <div id="admin-panel" hidden>
+
       <div class="toolbar">
-        <input id="search" placeholder="Rechercher nom, téléphone ou numéro">
-        <button id="refresh">Actualiser</button>
-        <button id="logout" class="secondary">Déconnexion</button>
+
+        <input
+          id="search"
+          placeholder="Rechercher nom, téléphone ou numéro">
+
+        <button type="button" id="refresh">
+          Actualiser
+        </button>
+
+        <button type="button" id="logout" class="secondary">
+          Déconnexion
+        </button>
+
       </div>
 
       <p id="role"></p>
 
       <div id="admin-create" hidden>
+
         <h3>Créer un administrateur</h3>
+
         <form id="create-admin">
+
           <label>E-mail du nouvel administrateur
             <input type="email" name="email" required>
           </label>
+
           <label>Mot de passe temporaire
             <input type="password" name="password" minlength="12" required>
           </label>
-          <button>Créer le compte administrateur</button>
+
+          <button type="submit">
+            Créer le compte administrateur
+          </button>
+
         </form>
+
       </div>
 
       <div id="members"></div>
+
     </div>
 
     <p id="admin-status" role="status"></p>
+
   </section>
+
 </main>
 
-<a class="floating-join" href="#member-form" aria-label="Adhérer à SAMEL-Guinée">Adhérer</a>
+<a
+  class="floating-join"
+  href="#member-form"
+  aria-label="Adhérer à SAMEL-Guinée">
+  Adhérer
+</a>
 
 <footer>
   SAMEL-GUINÉE · TRAVAIL / COMPÉTENCE / SOLIDARITÉ<br>
@@ -156,5 +242,6 @@
 </footer>
 
 <script src="app.js"></script>
+
 </body>
 </html>
