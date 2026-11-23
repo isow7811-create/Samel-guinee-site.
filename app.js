@@ -358,6 +358,7 @@ async function getAdminProfile(userId) {
     "Aucun profil administrateur associé à ce compte."
   );
 }
+
 /* =====================================================
    CONNEXION ADMINISTRATEUR
 ===================================================== */
@@ -558,6 +559,145 @@ async function loadMembers() {
       `Impossible de charger les membres : ${err.message || "Erreur inconnue."}`;
   }
 }
+
+/* =====================================================
+   INTERFACE DE GESTION DES MEMBRES
+===================================================== */
+
+function ensureMemberManagementUI() {
+  const panel = $("admin-panel");
+
+  if (!panel || $("member-management")) return;
+
+  const section = document.createElement("section");
+
+  section.id = "member-management";
+
+  section.style.cssText =
+    "margin:18px 0;padding:16px;border:1px solid #dce8df;border-radius:14px;background:#fff";
+
+  section.innerHTML = `
+    <h3 style="color:#087b46">Gestion des membres</h3>
+
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+
+      <button
+        type="button"
+        id="show-add-member"
+        style="background:#087b46;color:white;padding:12px 18px;border:0;border-radius:8px"
+      >
+        + Ajouter un membre
+      </button>
+
+      <button
+        type="button"
+        id="export-all-members-pdf"
+        style="background:#1d4ed8;color:white;padding:12px 18px;border:0;border-radius:8px"
+      >
+        Télécharger la liste complète en PDF
+      </button>
+
+    </div>
+
+    <form
+      id="manual-member-form"
+      hidden
+      style="margin-top:16px;display:grid;gap:10px"
+    >
+
+      <h4 id="manual-form-title">
+        Ajouter un membre (sans selfie)
+      </h4>
+
+      <input type="hidden" name="id">
+
+      <label>
+        Nom *
+        <input name="nom" required maxlength="100">
+      </label>
+
+      <label>
+        Prénom *
+        <input name="prenom" required maxlength="100">
+      </label>
+
+      <label>
+        Sexe *
+        <select name="sexe" required>
+          <option value="">Choisir</option>
+          <option>Féminin</option>
+          <option>Masculin</option>
+        </select>
+      </label>
+
+      <label>
+        Téléphone *
+        <input name="telephone" type="tel" required>
+      </label>
+
+      <label>
+        Numéro PDV *
+        <input name="numero_pdv" required>
+      </label>
+
+      <label>
+        Région
+        <input name="region">
+      </label>
+
+      <label>
+        Ville
+        <input name="ville">
+      </label>
+
+      <label>
+        Commune
+        <input name="commune">
+      </label>
+
+      <label>
+        Emplacement
+        <input name="emplacement">
+      </label>
+
+      <label>
+        Poste occupé
+        <input name="poste_occupe">
+      </label>
+
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+
+        <button type="submit" id="save-manual-member">
+          Enregistrer
+        </button>
+
+        <button type="button" id="cancel-manual-member">
+          Annuler
+        </button>
+
+      </div>
+
+      <p id="manual-member-status" role="status"></p>
+
+    </form>
+  `;
+
+  const adminCreate = $("admin-create");
+
+  if (adminCreate?.parentNode) {
+    adminCreate.parentNode.insertBefore(
+      section,
+      adminCreate.nextSibling
+    );
+  } else {
+    panel.insertBefore(section, panel.firstChild);
+  }
+
+  $("show-add-member").addEventListener("click", () => {
+    openManualMemberForm(null);
+  });
+
+  $("export-all-members-pdf").addEventListener(
     "click",
     exportAllMembersPDF
   );
@@ -1238,7 +1378,6 @@ function openPrintableDocument(
 
         <p class="brand-sub">
           Syndicat des Acteurs de la Monnaie Électronique de Guinée
-
         </p>
 
         <p class="brand-motto">
@@ -1418,7 +1557,8 @@ async function exportOneMemberPDF(id) {
 
       </div>
     `,
-false,
+
+    false,
     printWindow
   );
 }
@@ -1598,7 +1738,6 @@ if ($("create-admin")) {
 
       if (!session) {
         throw new Error(
-
           "Session administrateur introuvable."
         );
       }
