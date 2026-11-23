@@ -11,7 +11,10 @@ const corsHeaders = {
 const MAX_SIZE = 5 * 1024 * 1024;
 const NOTIFICATION_EMAIL = "samelguinee224@gmail.com";
 
-function jsonResponse(body: Record<string, unknown>, status = 200) {
+function jsonResponse(
+  body: Record<string, unknown>,
+  status = 200
+): Response {
   return new Response(JSON.stringify(body), {
     status,
     headers: {
@@ -36,17 +39,21 @@ function escapeHtml(value: unknown): string {
   })[character] ?? character);
 }
 
-Deno.serve(async (req: Request) => {
+Deno.serve(async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
 
   if (req.method !== "POST") {
-    return jsonResponse({ error: "Méthode non autorisée." }, 405);
+    return jsonResponse({
+      error: "Méthode non autorisée.",
+    }, 405);
   }
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
-  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  const serviceKey =
+    Deno.env.get("SAMEL_SERVICE_ROLE_KEY") ||
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
   if (!supabaseUrl || !serviceKey) {
     console.error("Configuration Supabase incomplète.");
@@ -63,24 +70,36 @@ Deno.serve(async (req: Request) => {
   });
 
   let uploadedPath: string | null = null;
+  let memberInserted = false;
 
   try {
     const form = await req.formData();
 
+    // Récupération des champs du formulaire HTML.
     const nom = getValue(form, "nom");
     const prenom = getValue(form, "prenom");
     const sexe = getValue(form, "sexe");
-    const localisation = getValue(form, "region_ville_commune");
+    const region = getValue(form, "region");
+    const ville = getValue(form, "ville");
+    const commune = getValue(form, "commune");
     const emplacement = getValue(form, "emplacement");
     const telephone = getValue(form, "telephone");
     const numeroPdv = getValue(form, "numero_pdv");
     const poste = getValue(form, "poste_occupe");
-    const numeroAncien = getValue(form, "numero_existant");
+    const numeroCarteText = getValue(form, "numero_existant");
     const selfie = form.get("selfie");
 
+    // Vérification des informations obligatoires.
     if (
-      !nom || !prenom || !sexe || !localisation ||
-      !emplacement || !telephone || !numeroPdv
+      !nom ||
+      !prenom ||
+      !sexe ||
+      !region ||
+      !ville ||
+      !commune ||
+      !emplacement ||
+      !telephone ||
+      !numeroPdv
     ) {
       return jsonResponse({
         error: "Veuillez remplir tous les champs obligatoires.",
@@ -88,11 +107,38 @@ Deno.serve(async (req: Request) => {
     }
 
     if (!["Féminin", "Masculin"].includes(sexe)) {
-      return jsonResponse({ error: "Sexe invalide." }, 400);
+      return jsonResponse({
+        error: "Sexe invalide.",
+      }, 400);
     }
 
+    // Vérification du numéro de carte d'origine.
+    let numeroCarte: number | null = null;
+
+    if (numeroCarteText !== "") {
+      if (!/^\d+$/.test(numeroCarteText)) {
+        return jsonResponse({
+          error: "Le numéro de carte doit être un nombre entier.",
+        }, 400);
+      }
+
+      numeroCarte = Number(numeroCarteText);
+
+      if (
+        !Number.isSafeInteger(numeroCarte) ||
+        numeroCarte < 22
+      ) {
+        return jsonResponse({
+          error: "Les numéros de carte de 1 à 21 sont réservés au BEN.",
+        }, 400);
+      }
+    }
+
+    // Vérification du selfie.
     if (!(selfie instanceof File)) {
-      return jsonResponse({ error: "Le selfie est obligatoire." }, 400);
+      return jsonResponse({
+        error: "Le selfie est obligatoire.",
+      }, 400);
     }
 
     if (selfie.size <= 0 || selfie.size > MAX_SIZE) {
@@ -102,46 +148,18 @@ Deno.serve(async (req: Request) => {
     }
 
     if (!["image/jpeg", "image/png", "image/webp"].includes(selfie.type)) {
-      return jsonResponse({ error: "Format de photo non accepté." }, 400);
-    }
-
-    let memberNumber: number;
-    let existingNumber: number | null = null;
-
-    if (numeroAncien) {
-      existingNumber = Number(numeroAncien);
-
-      if (
-        !Number.isInteger(existingNumber) ||
-        existingNumber < 1 ||
-        existingNumber > 21
-      ) {
-        return jsonResponse({
-          error: "Le numéro d'une ancienne carte doit être compris entre 1 et 21.",
-        }, 400);
-      }
-
-      memberNumber = existingNumber;
-    } else {
-      const { data, error } = await admin.rpc("allocate_member_number");
-
-      if (error) {
-        console.error("Erreur compteur :", error);
-        throw new Error("Impossible d'attribuer un numéro de membre.");
-      }
-
-      memberNumber = Number(data);
-
-      if (!Number.isInteger(memberNumber) || memberNumber < 22) {
-        throw new Error("Le numéro attribué doit commencer à 22.");
-      }
+      return jsonResponse({
+        error: "Format de photo non accepté.",
+      }, 400);
     }
 
     const extension =
       selfie.type === "image/png" ? "png" :
       selfie.type === "image/webp" ? "webp" : "jpg";
 
-    uploadedPath = `${crypto.randomUUID()}.${extension}`;
+    // Conservation du stockage privé des selfies.
+    uploadedPath =
+      `inscriptions/${crypto.randomUUID()}.${extension}`;
 
     const { error: uploadError } = await admin.storage
       .from("member-selfies")
@@ -151,38 +169,51 @@ Deno.serve(async (req: Request) => {
       });
 
     if (uploadError) {
-      console.error("Erreur photo :", uploadError);
+      console.error("Erreur stockage selfie :", uploadError);
       throw new Error("Impossible d'enregistrer le selfie.");
     }
 
-    const { data: member, error: insertError } = await admin
-      .from("members")
-      .insert({
-        member_number: memberNumber,
-        nom,
-        prenom,
-        sexe,
-        region_ville_commune: localisation,
-        emplacement,
-        telephone,
-        numero_pdv: numeroPdv,
-        poste_occupe: poste || null,
-        numero_existant: existingNumber,
-        selfie_path: uploadedPath,
-      })
-      .select("id, member_number")
-      .single();
+    // Attribution du numéro par la fonction SQL existante.
+    // Les numéros 1 à 21 ne sont jamais attribués publiquement.
+    const { data: member, error: insertError } =
+      await admin.rpc("insert_member_with_auto_number", {
+        p_member: {
+          nom,
+          prenom,
+          sexe,
+          telephone,
+          numero_pdv: numeroPdv,
+          region,
+          ville,
+          commune,
+          emplacement,
+          poste_occupe: poste || null,
+          selfie_path: uploadedPath,
+        },
+        p_requested_number: numeroCarte,
+      });
 
     if (insertError) {
-      console.error("Erreur base de données :", insertError);
-
-      if (insertError.code === "23505") {
-        throw new Error("Ce numéro de membre est déjà enregistré.");
-      }
-
-      throw new Error("Impossible d'enregistrer le dossier du membre.");
+      console.error("Erreur insertion membre :", insertError);
+      throw new Error(
+        insertError.message ||
+        "Impossible d'enregistrer le dossier du membre."
+      );
     }
 
+    if (!member || !member.member_number) {
+      throw new Error(
+        "Le numéro d'identification du membre est introuvable."
+      );
+    }
+
+    // À partir d'ici, le dossier est enregistré.
+    // Une erreur d'e-mail ne doit pas supprimer le membre.
+    memberInserted = true;
+
+    const memberNumber = member.member_number;
+
+    // Notification automatique par Resend.
     let emailSent = false;
 
     const resendKey = Deno.env.get("RESEND_API_KEY");
@@ -193,20 +224,32 @@ Deno.serve(async (req: Request) => {
         const { data: signed, error: signedError } =
           await admin.storage
             .from("member-selfies")
-            .createSignedUrl(uploadedPath, 7 * 24 * 60 * 60);
+            .createSignedUrl(
+              uploadedPath,
+              7 * 24 * 60 * 60
+            );
 
-        const photoLink = !signedError ? signed?.signedUrl : null;
+        const photoLink =
+          !signedError ? signed?.signedUrl : null;
 
         const emailHtml = `
           <h2>Nouvelle inscription SAMEL-Guinée</h2>
-          <p><b>Numéro de membre :</b> ${memberNumber}</p>
-          <p><b>Nom :</b> ${escapeHtml(nom)} ${escapeHtml(prenom)}</p>
+
+          <p><b>Numéro de membre :</b> ${escapeHtml(memberNumber)}</p>
+          <p><b>Nom :</b> ${escapeHtml(nom)}</p>
+          <p><b>Prénom :</b> ${escapeHtml(prenom)}</p>
           <p><b>Sexe :</b> ${escapeHtml(sexe)}</p>
           <p><b>Téléphone :</b> ${escapeHtml(telephone)}</p>
           <p><b>Numéro PDV :</b> ${escapeHtml(numeroPdv)}</p>
-          <p><b>Région / Ville / Commune :</b> ${escapeHtml(localisation)}</p>
+          <p><b>Région :</b> ${escapeHtml(region)}</p>
+          <p><b>Ville :</b> ${escapeHtml(ville)}</p>
+          <p><b>Commune :</b> ${escapeHtml(commune)}</p>
           <p><b>Emplacement :</b> ${escapeHtml(emplacement)}</p>
           <p><b>Poste occupé :</b> ${escapeHtml(poste || "Non renseigné")}</p>
+          <p><b>Numéro de carte d'origine :</b>
+            ${numeroCarte ?? "Non renseigné"}
+          </p>
+
           <p><b>Selfie :</b> ${
             photoLink
               ? `<a href="${escapeHtml(photoLink)}">Consulter le selfie (lien valable 7 jours)</a>`
@@ -225,7 +268,8 @@ Deno.serve(async (req: Request) => {
             body: JSON.stringify({
               from: mailFrom,
               to: [NOTIFICATION_EMAIL],
-              subject: `Nouvelle inscription SAMEL-Guinée — N° ${memberNumber}`,
+              subject:
+                `Nouvelle inscription SAMEL-Guinée — N° ${memberNumber}`,
               html: emailHtml,
             }),
           }
@@ -234,7 +278,10 @@ Deno.serve(async (req: Request) => {
         if (mailResponse.ok) {
           emailSent = true;
         } else {
-          console.error("Erreur Resend :", await mailResponse.text());
+          console.error(
+            "Erreur Resend :",
+            await mailResponse.text()
+          );
         }
       } catch (mailError) {
         console.error("Erreur notification :", mailError);
@@ -243,17 +290,20 @@ Deno.serve(async (req: Request) => {
       console.warn("Clés e-mail non configurées.");
     }
 
+    // Réponse attendue par l'application.
     return jsonResponse({
       success: true,
-      member_number: member.member_number,
+      member_number: memberNumber,
       email_sent: emailSent,
-      message: "Inscription enregistrée avec succès.",
+      message:
+        `Félicitations ! Votre inscription au sein du SAMEL-Guinée a été effectuée avec succès. Votre demande d'adhésion a bien été enregistrée. Votre numéro de membre est : ${memberNumber}. Nous vous remercions pour votre confiance et vous souhaitons la bienvenue au sein de notre organisation. SAMEL-GUINÉE — Travail • Compétence • Solidarité — ON EST LÀ, POUR NOS DROITS ON SE BAT !`,
     });
 
   } catch (error) {
     console.error("Erreur submit-member :", error);
 
-    if (uploadedPath) {
+    // Nettoyage du selfie uniquement si l'inscription n'a pas abouti.
+    if (uploadedPath && !memberInserted) {
       const { error: cleanupError } = await admin.storage
         .from("member-selfies")
         .remove([uploadedPath]);
@@ -267,6 +317,6 @@ Deno.serve(async (req: Request) => {
       error: error instanceof Error
         ? error.message
         : "Une erreur inattendue est survenue.",
-    }, 400);
+    }, 500);
   }
 });
