@@ -79,9 +79,8 @@ Deno.serve(async (req: Request) => {
         nom: member.nom, prenom: member.prenom, sexe: member.sexe,
         telephone: member.telephone, numero_pdv: member.numero_pdv,
         region: member.region || null, ville: member.ville || null, commune: member.commune || null,
-        region_ville_commune: [member.region, member.ville, member.commune].filter(Boolean).join(" / "),
-        emplacement: member.emplacement || "", poste_occupe: member.poste_occupe || null,
-        updated_at: new Date().toISOString(),
+        emplacement: member.emplacement || null, poste_occupe: member.poste_occupe || null,
+        numero_carte_origine: member.numero_carte_origine ? Number(member.numero_carte_origine) : null,
       }).eq("id", id).select("id,member_number").maybeSingle();
       if (error) throw error;
       if (!data) return json({ error: "Membre introuvable." }, 404);
