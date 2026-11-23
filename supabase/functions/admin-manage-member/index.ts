@@ -36,7 +36,16 @@ Deno.serve(async (req: Request) => {
     const { data: profile, error: profileError } = await admin
       .from("profiles").select("role").eq("user_id", authData.user.id).maybeSingle();
     if (profileError) throw profileError;
-    if (!["admin", "super_admin"].includes(profile?.role || "")) {
+
+    let callerRole = profile?.role || null;
+    if (!callerRole) {
+      const { data: adminProfile, error: adminProfileError } = await admin
+        .from("admin_profiles").select("role").eq("user_id", authData.user.id).maybeSingle();
+      if (adminProfileError) throw adminProfileError;
+      callerRole = adminProfile?.role || null;
+    }
+
+    if (!["admin", "super_admin"].includes(callerRole || "")) {
       return json({ error: "Droits administrateur insuffisants." }, 403);
     }
 
@@ -50,6 +59,17 @@ Deno.serve(async (req: Request) => {
       emplacement: clean(body.emplacement), poste_occupe: clean(body.poste_occupe),
       numero_carte_origine: clean(body.numero_carte_origine),
     };
+
+    if (member.numero_carte_origine !== "") {
+      if (!/^\\d+$/.test(member.numero_carte_origine)) {
+        return json({ error: "L'ancien numéro de carte doit être un nombre entier." }, 400);
+      }
+      const oldCardNumber = Number(member.numero_carte_origine);
+      if (!Number.isSafeInteger(oldCardNumber) || oldCardNumber < 0) {
+        return json({ error: "L'ancien numéro de carte est invalide." }, 400);
+      }
+      member.numero_carte_origine = String(oldCardNumber);
+    }
 
     if (action === "add") {
       if (!member.nom || !member.prenom || !member.sexe || !member.telephone || !member.numero_pdv) {
@@ -80,11 +100,18 @@ Deno.serve(async (req: Request) => {
         telephone: member.telephone, numero_pdv: member.numero_pdv,
         region: member.region || null, ville: member.ville || null, commune: member.commune || null,
         emplacement: member.emplacement || null, poste_occupe: member.poste_occupe || null,
-        numero_carte_origine: member.numero_carte_origine ? Number(member.numero_carte_origine) : null,
-      }).eq("id", id).select("id,member_number").maybeSingle();
+        numero_carte_origine: member.numero_carte_origine !== ""
+          ? Number(member.numero_carte_origine)
+          : null,
+      }).eq("id", id).select("id,member_number,numero_carte_origine").maybeSingle();
       if (error) throw error;
       if (!data) return json({ error: "Membre introuvable." }, 404);
-      return json({ success: true, message: "Dossier du membre mis à jour.", member_number: data.member_number });
+      return json({
+        success: true,
+        message: "Dossier du membre mis à jour.",
+        member_number: data.member_number,
+        numero_carte_origine: data.numero_carte_origine,
+      });
     }
 
     if (action === "delete") {
