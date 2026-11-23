@@ -38,7 +38,16 @@ Deno.serve(async (req: Request) => {
     const { data: profile, error: profileError } = await admin
       .from("profiles").select("role").eq("user_id", authData.user.id).maybeSingle();
     if (profileError) throw profileError;
-    if (profile?.role !== "super_admin") {
+
+    let callerRole = profile?.role || null;
+    if (!callerRole) {
+      const { data: adminProfile, error: adminProfileError } = await admin
+        .from("admin_profiles").select("role").eq("user_id", authData.user.id).maybeSingle();
+      if (adminProfileError) throw adminProfileError;
+      callerRole = adminProfile?.role || null;
+    }
+
+    if (callerRole !== "super_admin") {
       return json({ error: "Seul le Super Administrateur peut créer des administrateurs." }, 403);
     }
 
