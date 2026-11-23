@@ -61,7 +61,7 @@ Deno.serve(async (req: Request) => {
     };
 
     if (member.numero_carte_origine !== "") {
-      if (!/^\\d+$/.test(member.numero_carte_origine)) {
+      if (!/^\d+$/.test(member.numero_carte_origine)) {
         return json({ error: "L'ancien numéro de carte doit être un nombre entier." }, 400);
       }
       const oldCardNumber = Number(member.numero_carte_origine);
