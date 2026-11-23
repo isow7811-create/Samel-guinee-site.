@@ -32,10 +32,7 @@ let currentAdminRole = null;
 
 function status(id, message) {
   const el = $(id);
-  if (el) {
-    el.textContent = message || "";
-    if (id === "form-status") el.style.whiteSpace = "pre-line";
-  }
+  if (el) el.textContent = message || "";
 }
 
 function escapeHTML(value) {
@@ -294,7 +291,7 @@ if ($("member-form")) {
 
       status(
         "form-status",
-        `Félicitations ! Votre inscription au sein du SAMEL-Guinée a été effectuée avec succès.\n\nVotre demande d’adhésion a bien été enregistrée.\n\nVotre numéro de membre est : ${data.member_number}.\n\nNous vous remercions pour votre confiance et vous souhaitons la bienvenue au sein de notre organisation.\n\nSAMEL-GUINÉE\nTravail • Compétence • Solidarité\n\nON EST LÀ, POUR NOS DROITS ON SE BAT !`
+        `Inscription envoyée avec succès ! Votre numéro de membre est : ${data.member_number}.`
       );
 
       form.reset();
@@ -361,7 +358,6 @@ async function getAdminProfile(userId) {
     "Aucun profil administrateur associé à ce compte."
   );
 }
-
 /* =====================================================
    CONNEXION ADMINISTRATEUR
 ===================================================== */
@@ -539,7 +535,7 @@ async function loadMembers() {
       const { data, error } = await client
         .from("members")
         .select(
-          "id,member_number,nom,prenom,sexe,telephone,numero_pdv,region_ville_commune,emplacement,poste_occupe,created_at,selfie_path"
+          "id,member_number,nom,prenom,sexe,telephone,numero_pdv,region,ville,commune,emplacement,poste_occupe,created_at,selfie_path"
         )
         .order("member_number", { ascending: true })
         .range(from, from + pageSize - 1);
@@ -562,150 +558,6 @@ async function loadMembers() {
       `Impossible de charger les membres : ${err.message || "Erreur inconnue."}`;
   }
 }
-
-/* =====================================================
-   INTERFACE DE GESTION DES MEMBRES
-===================================================== */
-
-function ensureMemberManagementUI() {
-  const panel = $("admin-panel");
-
-  if (!panel || $("member-management")) return;
-
-  const section = document.createElement("section");
-
-  section.id = "member-management";
-
-  section.style.cssText =
-    "margin:18px 0;padding:16px;border:1px solid #dce8df;border-radius:14px;background:#fff";
-
-  section.innerHTML = `
-    <h3 style="color:#087b46">Gestion des membres</h3>
-
-    <div style="display:flex;gap:8px;flex-wrap:wrap">
-
-      <button
-        type="button"
-        id="show-add-member"
-        style="background:#087b46;color:white;padding:12px 18px;border:0;border-radius:8px"
-      >
-        + Ajouter un membre
-      </button>
-
-      <button
-        type="button"
-        id="export-all-members-pdf"
-        style="background:#1d4ed8;color:white;padding:12px 18px;border:0;border-radius:8px"
-      >
-        Télécharger la liste complète en PDF
-      </button>
-
-    </div>
-
-    <form
-      id="manual-member-form"
-      hidden
-      style="margin-top:16px;display:grid;gap:10px"
-    >
-
-      <h4 id="manual-form-title">
-        Ajouter un membre (sans selfie)
-      </h4>
-
-      <input type="hidden" name="id">
-
-      <label>
-        Nom *
-        <input name="nom" required maxlength="100">
-      </label>
-
-      <label>
-        Prénom *
-        <input name="prenom" required maxlength="100">
-      </label>
-
-      <label>
-        Sexe *
-        <select name="sexe" required>
-          <option value="">Choisir</option>
-          <option>Féminin</option>
-          <option>Masculin</option>
-        </select>
-      </label>
-
-      <label>
-        Téléphone *
-        <input name="telephone" type="tel" required>
-      </label>
-
-      <label>
-        Numéro PDV *
-        <input name="numero_pdv" required>
-      </label>
-
-      <label>
-        Ancien numéro de carte (réservé aux numéros 1 à 21)
-        <input name="numero_existant" type="number" min="1" max="21" step="1">
-      </label>
-
-      <label>
-        Région
-        <input name="region">
-      </label>
-
-      <label>
-        Ville
-        <input name="ville">
-      </label>
-
-      <label>
-        Commune
-        <input name="commune">
-      </label>
-
-      <label>
-        Emplacement
-        <input name="emplacement">
-      </label>
-
-      <label>
-        Poste occupé
-        <input name="poste_occupe">
-      </label>
-
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
-
-        <button type="submit" id="save-manual-member">
-          Enregistrer
-        </button>
-
-        <button type="button" id="cancel-manual-member">
-          Annuler
-        </button>
-
-      </div>
-
-      <p id="manual-member-status" role="status"></p>
-
-    </form>
-  `;
-
-  const adminCreate = $("admin-create");
-
-  if (adminCreate?.parentNode) {
-    adminCreate.parentNode.insertBefore(
-      section,
-      adminCreate.nextSibling
-    );
-  } else {
-    panel.insertBefore(section, panel.firstChild);
-  }
-
-  $("show-add-member").addEventListener("click", () => {
-    openManualMemberForm(null);
-  });
-
-  $("export-all-members-pdf").addEventListener(
     "click",
     exportAllMembersPDF
   );
@@ -738,17 +590,14 @@ function openManualMemberForm(member) {
     "sexe",
     "telephone",
     "numero_pdv",
+    "region",
+    "ville",
+    "commune",
     "emplacement",
-    "poste_occupe",
-    "numero_existant"
+    "poste_occupe"
   ].forEach(k => {
     form.elements[k].value = member?.[k] ?? "";
   });
-
-  const locationParts = String(member?.region_ville_commune || "").split("/").map(part => part.trim());
-  form.elements.region.value = locationParts[0] || "";
-  form.elements.ville.value = locationParts[1] || "";
-  form.elements.commune.value = locationParts.slice(2).join(" / ") || "";
 
   $("manual-form-title").textContent = member
     ? `Modifier le membre N° ${member.member_number}`
@@ -842,14 +691,6 @@ async function saveManualMember(event) {
       new FormData(form).entries()
     );
 
-    values.region_ville_commune = [values.region, values.ville, values.commune]
-      .map(value => String(value || "").trim())
-      .filter(Boolean)
-      .join(" / ");
-    delete values.region;
-    delete values.ville;
-    delete values.commune;
-
     const action = values.id ? "update" : "add";
 
     const result = await invokeMemberManagement({
@@ -938,7 +779,9 @@ function renderMembers() {
     m.sexe,
     m.telephone,
     m.numero_pdv,
-    m.region_ville_commune,
+    m.region,
+    m.ville,
+    m.commune,
     m.emplacement,
     m.poste_occupe
   ].join(" ").toLocaleLowerCase("fr").includes(q));
@@ -1003,7 +846,9 @@ function renderMembers() {
 
               <td>
                 ${escapeHTML(
-                  m.region_ville_commune
+                  [m.region, m.ville, m.commune]
+                    .filter(Boolean)
+                    .join(" / ")
                 )}
               </td>
 
@@ -1393,6 +1238,7 @@ function openPrintableDocument(
 
         <p class="brand-sub">
           Syndicat des Acteurs de la Monnaie Électronique de Guinée
+
         </p>
 
         <p class="brand-motto">
@@ -1520,7 +1366,9 @@ async function exportOneMemberPDF(id) {
     ["Sexe", member.sexe],
     ["Téléphone", member.telephone],
     ["Numéro PDV", member.numero_pdv],
-    ["Région / Ville / Commune", member.region_ville_commune],
+    ["Région", member.region],
+    ["Ville", member.ville],
+    ["Commune", member.commune],
     ["Emplacement", member.emplacement],
     ["Poste occupé", member.poste_occupe],
     ["Date d'inscription", formatDate(member.created_at)]
@@ -1570,8 +1418,7 @@ async function exportOneMemberPDF(id) {
 
       </div>
     `,
-
-    false,
+false,
     printWindow
   );
 }
@@ -1601,7 +1448,11 @@ function exportAllMembersPDF() {
 
       <td>${pdfEscape(m.numero_pdv)}</td>
 
-      <td>${pdfEscape(m.region_ville_commune)}</td>
+      <td>${pdfEscape(m.region)}</td>
+
+      <td>${pdfEscape(m.ville)}</td>
+
+      <td>${pdfEscape(m.commune)}</td>
 
       <td>${pdfEscape(m.emplacement)}</td>
 
@@ -1634,7 +1485,9 @@ function exportAllMembersPDF() {
           <th>Sexe</th>
           <th>Téléphone</th>
           <th>N° PDV</th>
-          <th>Région / Ville / Commune</th>
+          <th>Région</th>
+          <th>Ville</th>
+          <th>Commune</th>
           <th>Emplacement</th>
           <th>Date d'inscription</th>
         </tr>
@@ -1745,6 +1598,7 @@ if ($("create-admin")) {
 
       if (!session) {
         throw new Error(
+
           "Session administrateur introuvable."
         );
       }
