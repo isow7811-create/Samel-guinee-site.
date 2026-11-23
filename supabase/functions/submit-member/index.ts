@@ -126,10 +126,10 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
       if (
         !Number.isSafeInteger(numeroCarte) ||
-        numeroCarte < 22
+        numeroCarte < 1
       ) {
         return jsonResponse({
-          error: "Les numéros de carte de 1 à 21 sont réservés au BEN.",
+          error: "Le numéro de carte doit être un entier positif.",
         }, 400);
       }
     }
