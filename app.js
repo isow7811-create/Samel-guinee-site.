@@ -536,7 +536,7 @@ async function loadMembers() {
       const { data, error } = await client
         .from("members")
         .select(
-          "id,member_number,nom,prenom,sexe,telephone,numero_pdv,region,ville,commune,emplacement,poste_occupe,created_at,selfie_path"
+          "id,member_number,numero_carte_origine,nom,prenom,sexe,telephone,numero_pdv,region,ville,commune,emplacement,poste_occupe,created_at,selfie_path"
         )
         .order("member_number", { ascending: true })
         .range(from, from + pageSize - 1);
@@ -610,6 +610,11 @@ function ensureMemberManagementUI() {
       </h4>
 
       <input type="hidden" name="id">
+
+      <label>
+        Numéro de membre réservé (1 à 21, intégration manuelle uniquement)
+        <input name="member_number" type="number" min="1" max="21" step="1" placeholder="Laisser vide pour attribution automatique à partir de 22">
+      </label>
 
       <label>
         Nom *
@@ -725,6 +730,7 @@ function openManualMemberForm(member) {
   form.elements.id.value = member?.id || "";
 
   [
+    "member_number",
     "nom",
     "prenom",
     "sexe",
@@ -914,6 +920,7 @@ function renderMembers() {
 
   const rows = currentMembers.filter(m => [
     m.member_number,
+    m.numero_carte_origine,
     m.nom,
     m.prenom,
     m.sexe,
@@ -953,6 +960,7 @@ function renderMembers() {
         <thead>
           <tr>
             <th>N° membre</th>
+            <th>Ancien N° carte</th>
             <th>Nom et prénom</th>
             <th>Sexe</th>
             <th>Téléphone</th>
@@ -972,6 +980,7 @@ function renderMembers() {
             <tr>
 
               <td>${escapeHTML(m.member_number)}</td>
+              <td>${escapeHTML(m.numero_carte_origine || "—")}</td>
 
               <td>
                 ${escapeHTML(m.nom)}
@@ -1500,6 +1509,7 @@ async function exportOneMemberPDF(id) {
 
   const fields = [
     ["Numéro de membre", member.member_number],
+    ["Ancien numéro de carte", member.numero_carte_origine],
     ["Nom", member.nom],
     ["Prénom", member.prenom],
     ["Sexe", member.sexe],
@@ -1576,6 +1586,7 @@ function exportAllMembersPDF() {
     <tr>
 
       <td>${pdfEscape(m.member_number)}</td>
+      <td>${pdfEscape(m.numero_carte_origine || "—")}</td>
 
       <td>
         ${pdfEscape(m.nom)}
@@ -1620,7 +1631,8 @@ function exportAllMembersPDF() {
       <thead>
 
         <tr>
-          <th>N°</th>
+          <th>N° membre</th>
+          <th>Ancien N° carte</th>
           <th>Nom et prénom</th>
           <th>Sexe</th>
           <th>Téléphone</th>
