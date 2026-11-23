@@ -1,0 +1,13 @@
+project_id = "muzxcqrcalvmjzhjyeat"
+
+# The public registration endpoint validates all fields and the selfie itself.
+# Admin endpoints disable gateway JWT parsing but validate the bearer token
+# against Supabase Auth and enforce the profiles.role server-side.
+[functions."submit-member"]
+verify_jwt = false
+
+[functions."admin-create-user"]
+verify_jwt = false
+
+[functions."admin-manage-member"]
+verify_jwt = false
