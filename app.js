@@ -611,9 +611,14 @@ function ensureMemberManagementUI() {
 
       <input type="hidden" name="id">
 
-      <label>
+      <label data-manual-number-field>
         Numéro de membre réservé (1 à 21, intégration manuelle uniquement)
         <input name="member_number" type="number" min="1" max="21" step="1" placeholder="Laisser vide pour attribution automatique à partir de 22">
+      </label>
+
+      <label>
+        Ancien numéro de carte (facultatif)
+        <input name="numero_carte_origine" type="number" min="0" step="1" inputmode="numeric" placeholder="Numéro figurant sur l'ancienne carte">
       </label>
 
       <label>
@@ -731,6 +736,7 @@ function openManualMemberForm(member) {
 
   [
     "member_number",
+    "numero_carte_origine",
     "nom",
     "prenom",
     "sexe",
@@ -744,6 +750,9 @@ function openManualMemberForm(member) {
   ].forEach(k => {
     form.elements[k].value = member?.[k] ?? "";
   });
+
+  const manualNumberField = form.querySelector("[data-manual-number-field]");
+  if (manualNumberField) manualNumberField.hidden = !!member;
 
   $("manual-form-title").textContent = member
     ? `Modifier le membre N° ${member.member_number}`
